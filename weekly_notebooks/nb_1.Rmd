@@ -11,8 +11,8 @@ Just a couple of simple implementations to get our hands dirty.
 
 ```{r}
 parameters <- c(
-  beta = 5,
-  gamma = 0.7,
+  beta = 0.7,
+  gamma = 0.1,
   N = 60
 )
 
@@ -44,8 +44,6 @@ Infection <- function(t, state, parameters) {
 
 times <- seq(0, 10, by=0.01)
 out <- ode(y=state, times=times, func=Infection, parms=parameters)
-fig.height = 50
-fig.width = 10
 par(mfrow=c(2,1), mar=c(5,4,0,0), oma=c(1,0,3,0))
 plot(out[, "time"], lapply(out[, "Y"], exp), xlab="t", ylab="I")
 plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
@@ -54,5 +52,13 @@ plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
 ## Stochastic Model
 
 ```{r}
+state <- c(
+  S = c(initial[["S"]]),
+  I = c(initial[["I"]])
+)
+
+
+# T = rexp(1, rate=)
+# U = runif(1)
 
 ```
