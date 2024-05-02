@@ -10,6 +10,8 @@ Just a couple of simple implementations to get our hands dirty.
 ## Define Parameters
 
 ```{r}
+endTime = 10
+
 parameters <- c(
   beta = 0.7,
   gamma = 0.1,
@@ -42,9 +44,9 @@ Infection <- function(t, state, parameters) {
   })
 }
 
-times <- seq(0, 10, by=0.01)
+times <- seq(0, endTime, by=0.01)
 out <- ode(y=state, times=times, func=Infection, parms=parameters)
-par(mfrow=c(2,1), mar=c(5,4,0,0), oma=c(1,0,3,0))
+par(mfrow=c(1,2), mar=c(5,4,0,0), oma=c(1,0,3,0))
 plot(out[, "time"], lapply(out[, "Y"], exp), xlab="t", ylab="I")
 plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
 ```
@@ -52,13 +54,38 @@ plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
 ## Stochastic Model
 
 ```{r}
-state <- c(
-  S = c(initial[["S"]]),
-  I = c(initial[["I"]])
+times <- c(
+  0
 )
 
+state <- c(
+  S = c(initial[["S"]]),
+  I = c(initial[["I"]]),
+  R = c(0)
+)
 
-# T = rexp(1, rate=)
-# U = runif(1)
+# for loop
+
+while (tail(times, n=1) < endTime){
+  with(as.list(c(state, parameters))){
+    latest_S <- tail(S,1)[1]
+    latest_I <- tail(I,1)[1]
+    latest_R <- tail(R,1)[1]
+    next_T <- rexp(1, beta * latest_S * latest_I / N + gamma * tail(I, 1)[1])[1]
+    U <- runif(1)[1]
+    if (U < (beta * latest_S / N) / (beta * latest_S / N + gamma)) {
+      S <- c(S, latest_I - 1)
+      I <- c(I,latest_I + 1)
+      R <- c(R, latest_R)
+    }
+    else {
+      S <- c(S, latest_I)
+      I <- c(I,latest_I - 1)
+      R <- c(R, latest_R + 1)
+    }
+  }
+}
+
+plot
 
 ```
