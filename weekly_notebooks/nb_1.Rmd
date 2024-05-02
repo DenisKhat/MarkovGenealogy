@@ -14,7 +14,7 @@ endTime = 10
 
 parameters <- c(
   beta = 0.7,
-  gamma = 0,
+  gamma = 0.1,
   N = 60
 )
 
@@ -93,13 +93,13 @@ while (current_time < endTime){
 print(times)
 print(I)
 
-# combined <- list(times = times, I = I)
-# print(combined)
-# df = as.data.frame(do.call(cbind, combined))
-# print(df)
-# 
-# png()
-# ggplot(df, aes(x = times, y = I)) +
-#           geom_point()
+combined <- list(times = times, I = I)
+print(combined)
+df = as.data.frame(do.call(cbind, combined))
+print(df)
+
+png()
+ggplot(df, aes(x = times, y = I)) +
+          geom_point()
 
 ```
