@@ -1,0 +1,50 @@
+---
+title: "Virus Notebook 1"
+output: html_notebook
+---
+
+# Virus Notebook 1
+
+Just a couple of simple implementations to get our hands dirty.
+
+## Define Parameters
+
+```{r}
+parameters <- c(
+  beta = 5,
+  gamma = 0.7,
+  N = 60
+)
+```
+
+## Deterministic Model
+
+(using the logarithmic form recommended by Felicia)
+
+```{r}
+library(deSolve)
+
+state <- c(
+  X = log(59),
+  Y = log(1)
+)
+
+Infection <- function(t, state, parameters) {
+  with(as.list(c(state, parameters)),{
+    dX <- -beta * exp(Y) / N
+    dY <- beta * exp(X) / N - gamma
+    list(c(dX, dY))
+  })
+}
+
+times <- seq(0, 10, by = 0.005)
+out <- ode(y=state, times=times, func = Infection, parms=parameters)
+# head(out)
+plot(out[, "time"], lapply(out[, "Y"], exp), xlab="time", ylab="infections")
+```
+
+## Stochastic Model
+```{r}
+
+```
+
