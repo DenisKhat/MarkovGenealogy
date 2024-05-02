@@ -1,8 +1,8 @@
 ---
-title: "Virus Notebook 1"
+title: "Notebook Week 1"
 output: html_notebook
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 Just a couple of simple implementations to get our hands dirty.
@@ -15,6 +15,11 @@ parameters <- c(
   gamma = 0.7,
   N = 60
 )
+
+initial <- c(
+  S = 59,
+  I = 1
+)
 ```
 
 ## Deterministic Model
@@ -25,8 +30,8 @@ parameters <- c(
 library(deSolve)
 
 state <- c(
-  X = log(59),
-  Y = log(1)
+  X = log(initial[["S"]]),
+  Y = log(initial[["I"]])
 )
 
 Infection <- function(t, state, parameters) {
@@ -39,10 +44,11 @@ Infection <- function(t, state, parameters) {
 
 times <- seq(0, 10, by=0.01)
 out <- ode(y=state, times=times, func=Infection, parms=parameters)
-par(mfrow=c(2,1))
-# head(out)
-plot(out[, "time"], lapply(out[, "Y"], exp), xlab="time", ylab="infections")
-plot(out[, "time"], lapply(out[, "X"], exp), xlab="time", ylab="susceptibles")
+fig.height = 50
+fig.width = 10
+par(mfrow=c(2,1), mar=c(5,4,0,0), oma=c(1,0,3,0))
+plot(out[, "time"], lapply(out[, "Y"], exp), xlab="t", ylab="I")
+plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
 ```
 
 ## Stochastic Model
