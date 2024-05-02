@@ -1,9 +1,9 @@
 ---
 title: "Virus Notebook 1"
 output: html_notebook
+editor_options: 
+  chunk_output_type: console
 ---
-
-# Virus Notebook 1
 
 Just a couple of simple implementations to get our hands dirty.
 
@@ -37,14 +37,16 @@ Infection <- function(t, state, parameters) {
   })
 }
 
-times <- seq(0, 10, by = 0.005)
-out <- ode(y=state, times=times, func = Infection, parms=parameters)
+times <- seq(0, 10, by=0.01)
+out <- ode(y=state, times=times, func=Infection, parms=parameters)
+par(mfrow=c(2,1))
 # head(out)
 plot(out[, "time"], lapply(out[, "Y"], exp), xlab="time", ylab="infections")
+plot(out[, "time"], lapply(out[, "X"], exp), xlab="time", ylab="susceptibles")
 ```
 
 ## Stochastic Model
+
 ```{r}
 
 ```
-
