@@ -2,14 +2,15 @@
 title: "Notebook Week 1"
 output: html_notebook
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 Just a couple of simple implementations to get our hands dirty.
 
 ## Define Parameters
 
-```{r}
+```{r,echo=FALSE, results='asis', message = FALSE, error = FALSE, warning= FALSE}
+require(ggplot2)
 endTime = 10
 
 parameters <- c(
@@ -28,8 +29,11 @@ initial <- c(
 
 (using the logarithmic form recommended by Felicia)
 
-```{r}
+```{r,echo=FALSE, results='asis', message = FALSE, error = FALSE, warning= FALSE}
+require(ggplot2)
 library(deSolve)
+library(ggplot2)
+library(gridExtra)  # install.packages("gridExtra")
 
 state <- c(
   X = log(initial[["S"]]),
@@ -46,15 +50,37 @@ Infection <- function(t, state, parameters) {
 
 times <- seq(0, endTime, by=0.01)
 out <- ode(y=state, times=times, func=Infection, parms=parameters)
-png()
-par(mfrow=c(1,2), mar=c(5,4,0,0), oma=c(1,0,3,0))
-plot(out[, "time"], lapply(out[, "Y"], exp), xlab="t", ylab="I")
-plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
+
+infected <- exp(out[, "Y"])
+susceptible <- exp(out[, "X"])
+
+combined <- list(times = times, infected = infected)
+dfInfected = as.data.frame(do.call(cbind, combined))
+
+InfectedPlot <- ggplot(dfInfected, aes(x = times, y = infected)) +
+          geom_point() +
+          labs(x = "Time", y = "Infected")
+
+combined <- list(times = times, susceptible = susceptible)
+
+dfSusceptible = as.data.frame(do.call(cbind, combined))
+SusceptiblePlot <- ggplot(dfInfected, aes(x = times, y = susceptible)) +
+          geom_point() +
+          labs(x = "Time", y = "Susceptible")
+
+grid.arrange(InfectedPlot, SusceptiblePlot, nrow = 2)
+# 
+# par(mfrow=c(1,2), mar=c(5,4,0,0), oma=c(1,0,3,0))
+# plot(out[, "time"], lapply(out[, "Y"], exp), xlab="t", ylab="I")
+# plot(out[, "time"], lapply(out[, "X"], exp), xlab="t", ylab="S")
 ```
 
 ## Stochastic Model
 
-```{r}
+```{r,echo=FALSE, results='asis', message = FALSE, error = FALSE, warning= FALSE}
+require(ggplot2)
+library(ggplot2)
+library(gridExtra)
 times <- c(
   0
 )
@@ -95,11 +121,21 @@ print(I)
 
 combined <- list(times = times, I = I)
 print(combined)
-df = as.data.frame(do.call(cbind, combined))
-print(df)
 
-png()
-ggplot(df, aes(x = times, y = I)) +
-          geom_point()
 
+dfInfected = as.data.frame(do.call(cbind, combined))
+
+InfectedPlot <- ggplot(dfInfected, aes(x = times, y = I)) +
+          geom_point() +
+          labs(x = "Time", y = "Infected")
+
+
+combined <- list(times = times, S = S)
+dfSusceptible = as.data.frame(do.call(cbind, combined))
+
+SusceptiblePlot <- ggplot(dfSusceptible, aes(x = times, y = S)) +
+          geom_point() +
+          labs(x = "Time", y = "Susceptible")
+
+grid.arrange(InfectedPlot, SusceptiblePlot, nrow = 2)
 ```
