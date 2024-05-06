@@ -8,9 +8,9 @@ editor_options:
 Just a couple of simple implementations to get our hands dirty.
 
 ## Define Parameters
-
 ```{r,echo=FALSE, results='asis', message = FALSE, error = FALSE, warning= FALSE}
 require(ggplot2)
+
 endTime = 10
 
 parameters <- c(
@@ -103,7 +103,15 @@ while (current_time < endTime){
     latest_R <- tail(R,1)[1]
     next_T <- rexp(1, beta * latest_S * latest_I / N + gamma * latest_I)
     U <- runif(1)
-    if (U < (beta * latest_S / N) / (beta * latest_S / N + gamma)) {
+    if (latest_I <= 0){
+      # This means the virus died
+      S <-  c(S, latest_S)
+      I <- c(I, latest_I)
+      R <- c(R, latest_R)
+      times <- c(times, endTime)
+      break
+    }
+    else if (U < (beta * latest_S / N) / (beta * latest_S / N + gamma)) {
       S <- c(S, latest_S - 1)
       I <- c(I,latest_I + 1)
       R <- c(R, latest_R)
