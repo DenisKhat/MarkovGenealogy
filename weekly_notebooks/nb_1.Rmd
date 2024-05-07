@@ -8,7 +8,8 @@ editor_options:
 Just a couple of simple implementations to get our hands dirty.
 
 ## Define Parameters
-```{r,echo=FALSE, results='asis', message = FALSE, error = FALSE, warning= FALSE}
+
+```{r,echo=TRUE'asis', message = FALSE, error = FALSE, warning= FALSE}
 require(ggplot2)
 
 endTime = 10
@@ -129,7 +130,6 @@ while (current_time < endTime){
 
 combined <- list(times = times, I = I)
 # print(combined)
-
 
 dfInfected = as.data.frame(do.call(cbind, combined))
 
