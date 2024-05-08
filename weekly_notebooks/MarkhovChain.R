@@ -31,15 +31,15 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
       # S = S + 1
       I = I - 1
       R = R + 1
-      infecter <- 0
-      affected <- sample(I_list, 1)
-      I_list <- I_list[I_list != affected]
+      infecter <- sample(I_list, 1)
+      affected <- 0
+      I_list <- I_list[I_list != infecter]
       # S_list <- c(S_list, affected)
-      R_list <- c(R_list, affected)
+      R_list <- c(R_list, infecter)
     }
     table <- rbind(table, c(current_time, infecter, affected, S, I, R))
   }
-  return(table)
+  return(table[-nrow(table), ])
 }
 
-data.frame(markhov_virus(end_time=60,beta=0.88, gamma=0.4, S=59, I=1))
+data.frame(markhov_virus(end_time=3,beta=0.7, gamma=0, S=59, I=1))
