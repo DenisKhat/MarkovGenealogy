@@ -43,11 +43,10 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
   table <- table[-nrow(table), ]
   table <- data.frame(table)
   table$time <- as.numeric(table$time)
-  return(list(table = table, p_0 = p_0))
+  return(table)
 }
 
-result <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
-table <- result$table
-p_0 <- result$p_0
+table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
+p_0 <- table$infector[2]
 print(table[-7]) # not showing I list
 print(p_0)

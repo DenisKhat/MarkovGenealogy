@@ -1,9 +1,8 @@
 plot.new()
 
 source("C:/Users/Simon/MarkhovGenealogy/weekly_notebooks/MarkhovChain.R")  # copy path from MarkhovChain File
-result <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
-table <- result$table
-p_0 <- result$p_0
+table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
+p_0 <- table$infector[2]
 
 end_time = 10
 

@@ -2,8 +2,8 @@ library(ggplot2)
 
 source("C:/Users/Simon/MarkhovGenealogy/weekly_notebooks/MarkhovChain.R") # copy path from MarkhovChain File
 
-time <- 2
-N <- 1
+time <- 5
+N <- 2
 
 ids <- c(1:60)
 id_counts <- rep(0, 60)
@@ -14,33 +14,28 @@ closest_lower <- function(target, numbers) {
 }
 
 for (i in 1:N){
-  result <- data.frame(markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)) # produce table
-  table <- result$table
+  table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1) # produce table
+  indices <- which(table$time == time)  # get indice of desired time
+  if (length(indices) == 0){ # if no exact event at exact time
+    indices <- which(table$time == closest_lower(time, table$time)) # look at closest earlier event
+  }
   
-  if (gamma > 0){ # if recovery only check times that start with desired time, ie 2.1, 2.3, etc
-    indices <- which(substr(as.character(table$time), 1, 1) == time)  # get indices of desired time
-    if (length(indices) == 0){ # if no events at time, use latest info, ie no events at time = 2 look at 1.9
-      indices <- which(as.numeric(table$time) == closest_lower(time, as.numeric(table$time)))
-    }
-  }
-  else{
-    indices <- which(substr(as.character(table$time), 1, 1) <= time)  # get indices of desired time
-  }
-  print(table[-7])
+  print(paste("infected at time:", table$I.List[indices]))
+  print(table)
   print(indices)
   infected_at_t <- c()  # set of those infected at desired time
-  for (j in indices){
-    infected <- as.integer(strsplit(table$I.List[j], ", ")[[1]])
-    infected_at_t <- c(infected_at_t, infected)
-    infected_at_t <- unique(infected_at_t)
-  }
-  to_incr <- match(infected_at_t, 1:60)
-  print(to_incr)
-  id_counts[to_incr] <- id_counts[to_incr] + 1
-  print(id_counts)
   
-  print(infected_at_t)
-  print(id_probs)
+  infected <- table$I.List[indices] # look at infected at desired time
+  infected <- as.integer(unlist(strsplit(as.character(infected), ", "))) # split into list of ints
+  infected_at_t <- c(infected_at_t, infected) # append infected
+  # print(infected_at_t)
+  
+  # print(to_incr)
+  id_counts[infected_at_t] <- id_counts[infected_at_t] + 1
+  # print(id_counts)
+  
+  # print(infected_at_t)
+  # print(id_probs)
 }
 
 id_probs <- id_counts / N
