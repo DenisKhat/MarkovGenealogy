@@ -1,9 +1,9 @@
 library(ggplot2)
 
-source("C:/Users/Simon/MarkhovGenealogy/weekly_notebooks/MarkhovChain.R") # copy path from MarkhovChain File
+source("weekly_notebooks/MarkhovChain.R") # copy path from MarkhovChain File
 
 time <- 5
-N <- 100
+N <- 500
 
 ids <- c(1:60)
 id_counts <- rep(0, 60)

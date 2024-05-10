@@ -73,11 +73,11 @@ markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initia
   return(as.matrix(mass_matrix))
 }
 
-  mass_matrix = markhov_probability(times=10, beta=0.4, gamma=0, initial_S=59, initial_I=1)
+mass_matrix = markhov_probability(times=5, beta=0.7, gamma=0.0, initial_S=59, initial_I=1)
 
 df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix))
 ggplot(data = df, aes(x = I, y = P)) + 
-  geom_col(color="aliceblue", fill=alpha("cadetblue", 0.7)) + 
+  geom_col(color="aliceblue", fill=alpha("blue", 0.3)) + 
   ylab('P(I)') +
   theme_classic() +
   theme(plot.title=element_text(family="sans", hjust = 0.5)) +
