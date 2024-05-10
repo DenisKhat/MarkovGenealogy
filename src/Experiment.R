@@ -1,6 +1,6 @@
 library(ggplot2)
 
-source("weekly_notebooks/MarkhovChain.R") # copy path from MarkhovChain File
+source("src/MarkhovChain.R") # copy path from MarkhovChain File
 
 time <- 5
 N <- 500

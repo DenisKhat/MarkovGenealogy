@@ -73,16 +73,4 @@ markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initia
   return(as.matrix(mass_matrix))
 }
 
-mass_matrix = markhov_probability(times=5, beta=0.7, gamma=0.0, initial_S=59, initial_I=1)
 
-df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix))
-ggplot(data = df, aes(x = I, y = P)) + 
-  geom_col(color="aliceblue", fill=alpha("blue", 0.3)) + 
-  ylab('P(I)') +
-  theme_classic() +
-  theme(plot.title=element_text(family="sans", hjust = 0.5)) +
-  ggtitle("PMF for Infection")
-# data.frame(markov_virus(end_time=60,beta=0.88, gamma=0.4, S=59, I=1))
-
-print(table[-7]) # not showing I list
-print(p_0)

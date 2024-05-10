@@ -1,0 +1,27 @@
+## R notebook to compare and plot the Markhov Chain probability distribution, vs a sample after running the experiment.
+### Load libraries and set parameters
+```{r}
+library(ggplot2)
+library(Matrix)
+
+t <-  3
+Beta <- 0.6
+Gamma <- 0
+N <- 60
+```
+### Generate overlapping graph
+```{r, file=c('src/Experiment.R', 'src/MarkhovChain.R')}
+
+
+mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1)
+
+df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix))
+ggplot(data = df, aes(x = I)) + 
+  geom_col(aes(y=P),color="aliceblue", fill=alpha("blue", 0.4)) + 
+  geom_col(aes(y=E), color="seashell", fill=alpha("red1", 0.4))
+  ylab('P(I)') +
+  theme_classic() +
+  theme(plot.title=element_text(family="sans", hjust = 0.5)) +
+  ggtitle("PMF for Infection")
+# data.frame(markov_virus(end_time=60,beta=0.88, gamma=0.4, S=59, I=1))
+```
