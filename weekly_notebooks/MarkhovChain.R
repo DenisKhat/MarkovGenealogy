@@ -63,12 +63,16 @@ markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initia
   mass_matrix <- do.call(rbind, mass_vectors)
   rownames(mass_matrix) <- times
   colnames(mass_matrix) <- seq(0,N)
-  return(mass_matrix)
+  return(as.matrix(mass_matrix))
 }
 
+  mass_matrix = markhov_probability(times=10, beta=0.4, gamma=0, initial_S=59, initial_I=1)
 
-distribution_plot <- function(data) {
-  ggplot
-}
-# markhov_probability(c(0:10), 0.2, 0.0, 4, 1)
+df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix))
+ggplot(data = df, aes(x = I, y = P)) + 
+  geom_col(color="aliceblue", fill=alpha("cadetblue", 0.7)) + 
+  ylab('P(I)') +
+  theme_classic() +
+  theme(plot.title=element_text(family="sans", hjust = 0.5)) +
+  ggtitle("PMF for Infection")
 # data.frame(markov_virus(end_time=60,beta=0.88, gamma=0.4, S=59, I=1))
