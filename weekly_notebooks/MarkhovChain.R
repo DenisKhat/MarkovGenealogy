@@ -1,6 +1,8 @@
 library(deSolve)
 library(ggplot2)
 library(gridExtra)  # install.packages("gridExtra")
+library(Matrix)
+
 
 markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
   #output value as: "time_of_event: infected/0, infected/recovered, 
@@ -42,4 +44,31 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
   return(table)
 }
 
-data.frame(markhov_virus(end_time=60,beta=0.88, gamma=0.4, S=59, I=1))
+markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0){
+  # Returns a matrix of probabilities, given time and I.
+  # output in form of matrix[time, I_value]
+  #temporarily for this function, assume recovery back into susceptible, may change that later.
+  N <- initial_S + initial_I + initial_R
+  # Code for diff. eqtn solving
+  lambda <- sapply(seq(0, N), function(i) beta * (N-i) * i / N)
+  mu <- sapply(seq(0, N), function(i) gamma * i)
+  A <- matrix(0, nrow=N+1, ncol=N+1)
+  for (i in seq(N+1)){
+    A[i,i] <- -lambda[i] - mu[i]
+    if (i <= N) A[i,i+1] <- lambda[i]
+    if (i > 1) A[i,i-1] <- mu[i]
+    }
+  initial_p = sapply(seq(0,N), function(i) 0 + (i == initial_I))
+  mass_vectors <- sapply(times, function(t) initial_p %*% expm(A*t))
+  mass_matrix <- do.call(rbind, mass_vectors)
+  rownames(mass_matrix) <- times
+  colnames(mass_matrix) <- seq(0,N)
+  return(mass_matrix)
+}
+
+
+distribution_plot <- function(data) {
+  ggplot
+}
+# markhov_probability(c(0:10), 0.2, 0.0, 4, 1)
+# data.frame(markov_virus(end_time=60,beta=0.88, gamma=0.4, S=59, I=1))
