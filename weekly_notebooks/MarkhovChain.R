@@ -39,10 +39,10 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
       R_list <- c(R_list, infecter)
     }
     table <- rbind(table, c(current_time, infecter, affected, S, I, R, toString(I_list)))
-    table <- data.frame(table)
-    table$time <- as.numeric(table$time)
   }
   table <- table[-nrow(table), ]
+  table <- data.frame(table)
+  table$time <- as.numeric(table$time)
   return(list(table = table, p_0 = p_0))
 }
 
