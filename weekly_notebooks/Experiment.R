@@ -3,7 +3,7 @@ library(ggplot2)
 source("C:/Users/Simon/MarkhovGenealogy/weekly_notebooks/MarkhovChain.R") # copy path from MarkhovChain File
 
 time <- 5
-N <- 2
+N <- 100
 
 ids <- c(1:60)
 id_counts <- rep(0, 60)
@@ -20,18 +20,21 @@ for (i in 1:N){
     indices <- which(table$time == closest_lower(time, table$time)) # look at closest earlier event
   }
   
-  print(paste("infected at time:", table$I.List[indices]))
-  print(table)
-  print(indices)
+  # print(paste("infected at time:", table$I.List[indices]))
+  # print(table)
+  # print(indices)
   infected_at_t <- c()  # set of those infected at desired time
   
-  infected <- table$I.List[indices] # look at infected at desired time
-  infected <- as.integer(unlist(strsplit(as.character(infected), ", "))) # split into list of ints
-  infected_at_t <- c(infected_at_t, infected) # append infected
+  # infected <- table$I.List[indices] # look at infected at desired time
+  # print(infected)
+  # infected <- as.integer(unlist(strsplit(as.character(infected), ", "))) # split into list of ints
+  # infected_at_t <- c(infected_at_t, infected) # append infected
   # print(infected_at_t)
   
   # print(to_incr)
-  id_counts[infected_at_t] <- id_counts[infected_at_t] + 1
+  # print(table$I[indices])
+  num_of_inf <- as.numeric(table$I[indices])
+  id_counts[num_of_inf] <- id_counts[num_of_inf] + 1
   # print(id_counts)
   
   # print(infected_at_t)
