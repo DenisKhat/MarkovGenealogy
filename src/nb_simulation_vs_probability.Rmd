@@ -3,22 +3,25 @@
 ```{r}
 library(ggplot2)
 library(Matrix)
+knitr::opts_chunk$set(echo = TRUE)
+source('MarkhovChain.R')
+source('Experiment.R')
 
-t <-  3
+t <-  1
 Beta <- 0.6
 Gamma <- 0
 N <- 60
 ```
 ### Generate overlapping graph
-```{r, file=c('src/Experiment.R', 'src/MarkhovChain.R')}
-
-
-mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1)
-
-df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix))
+```{r}
+mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1, immunity=TRUE)
+exp_df = experiment(1000, t, N, Beta, Gamma, N-1, 1)
+print(as.vector(exp_df[["prob"]]))
+df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix), E=as.vector(exp_df[["prob"]]))
+# print(df["E"])
 ggplot(data = df, aes(x = I)) + 
-  geom_col(aes(y=P),color="aliceblue", fill=alpha("blue", 0.4)) + 
-  geom_col(aes(y=E), color="seashell", fill=alpha("red1", 0.4))
+  geom_col(aes(y=P),color="aliceblue", fill=alpha("blue1",0.7)) + 
+  geom_col(aes(y=E),color="seashell", fill=alpha("red1", 0.4)) +
   ylab('P(I)') +
   theme_classic() +
   theme(plot.title=element_text(family="sans", hjust = 0.5)) +

@@ -42,16 +42,16 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
     }
     table <- rbind(table, c(current_time, infecter, affected, S, I, R, toString(I_list)))
   }
-  table <- table[-nrow(table), ]
+  if (current_time > end_time) table <- table[-nrow(table), ]
   table <- data.frame(table)
   table$time <- as.numeric(table$time)
   return(table)
 }
 
-table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
-p_0 <- table$infector[2]
+# table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
+# p_0 <- table$infector[2]
 
-markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0){
+markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=TRUE){
   # Returns a matrix of probabilities, given time and I.
   # output in form of matrix[time, I_value]
   #temporarily for this function, assume recovery back into susceptible, may change that later.
@@ -63,7 +63,7 @@ markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initia
   for (i in seq(N+1)){
     A[i,i] <- -lambda[i] - mu[i]
     if (i <= N) A[i,i+1] <- lambda[i]
-    if (i > 1) A[i,i-1] <- mu[i]
+    if (i > 1 & !immunity) A[i,i-1] <- mu[i]
     }
   initial_p = sapply(seq(0,N), function(i) 0 + (i == initial_I))
   mass_vectors <- sapply(times, function(t) initial_p %*% expm(A*t))

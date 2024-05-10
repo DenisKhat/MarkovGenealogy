@@ -1,7 +1,6 @@
 library(ggplot2)
 
-source("src/MarkhovChain.R") # copy path from MarkhovChain File
-
+#source("src/MarkhovChain.R") # copy path from MarkhovChain File
 
 
 # Function to find the number closest to a certain number as long as it is lower
@@ -10,10 +9,10 @@ closest_lower <- function(target, numbers) {
 }
 
 experiment <- function(n, time, N, beta, gamma, S, I){
-  ids <- c(1:N)
-  id_counts <- rep(0, N)
+  ids <- c(0:N)
+  id_counts <- rep(0, N+1)
   for (i in 1:n){
-    table <- markhov_virus(end_time=time,beta=beta, gamma=gamma, S=S, I=I) # produce table
+    table <- markhov_virus(end_time=time+1,beta=beta, gamma=gamma, S=S, I=I) # produce table
     indices <- which(table$time == time)  # get indice of desired time
     if (length(indices) == 0){ # if no exact event at exact time
       # print(closest_lower(time, table$time))
@@ -35,14 +34,14 @@ experiment <- function(n, time, N, beta, gamma, S, I){
     # print(table$I[indices])
     num_of_inf <- as.numeric(table$I[indices])
     # print(num_of_inf)
-    id_counts[num_of_inf] <- id_counts[num_of_inf] + 1
+    id_counts[num_of_inf+1] <- id_counts[num_of_inf+1] + 1
     # print(id_counts)
     
     # print(infected_at_t)
     # print(id_probs)
   }
   
-  id_probs <- id_counts / N
+  id_probs <- id_counts / n
   
   
   combined <- list(ids = ids, prob = id_probs)
