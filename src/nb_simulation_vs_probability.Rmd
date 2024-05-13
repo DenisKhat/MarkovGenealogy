@@ -16,8 +16,8 @@ N <- 60
 ```{r}
 mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1, immunity=TRUE)
 exp_df = experiment(1000, t, N, Beta, Gamma, N-1, 1)
-print(as.vector(exp_df[["prob"]]))
-df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix), E=as.vector(exp_df[["prob"]]))
+print(as.vector(exp_df[["probs"]]))
+df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix), E=as.vector(exp_df[["probs"]]))
 # print(df["E"])
 ggplot(data = df, aes(x = I)) + 
   geom_col(aes(y=P),color="aliceblue", fill=alpha("blue1",0.7)) + 

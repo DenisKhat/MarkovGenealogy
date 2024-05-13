@@ -12,20 +12,15 @@ height = 1  # need as global variable as is tracked outside of recursion
 
 # begin with patient 0 and infection time 0, recovery time == end time, 
 phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
-  indices <- rev(which(as.numeric(table$infector) == as.numeric(recent)))
-  # print("_____")
-  # print(indices)
-  # print(paste("recent", recent))
-  # print(paste("infects", table$affected[indices[1]]))
+  # get indices of events involving recent id
+  indices <- rev(which(as.numeric(table$infector) == as.numeric(recent))) 
   
-  segment_count <- 0  # Initialize segment count for this node
+  segment_count <- 0  # Initialize segment count for this id
   
   # if recovery
   if (length(indices) > 0 && table$affected[indices[1]] == 0){ 
-    recovery_time = table$time[indices[1]]
-    # print(parent_height)
-    # print("drawn if recovery")
-    # print(time_of_infection)
+    recovery_time = table$time[indices[1]] # get recovery time
+    # draw line
     segments(time_of_infection, height, recovery_time, height, lwd=2)
     segments(time_of_infection, height, time_of_infection,  height + 0.016 * counter, lwd=2)
     text(recovery_time + 0.1, height + 0.003, labels = recent, cex = 0.6)
@@ -34,11 +29,7 @@ phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
   }
   # if patient does not recover
   else {
-    
-    # print(parent_height)
-    # print("drawn")
-    
-    # print(time_of_infection)
+    # draw lines till end time since no recovery
     segments(time_of_infection, height, end_time, height, lwd=2)
     segments(time_of_infection, height, time_of_infection,  height + 0.016 * counter, lwd=2)
     text(end_time + 0.1, height + 0.003, labels = recent, cex = 0.6)
@@ -47,16 +38,13 @@ phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
   
   
   for (i in indices){
-    height <<- height - 0.016
-    counter <- segment_count
-    # print(paste("counter", counter))
-    # print(table$time[i])
+    height <<- height - 0.016 # decrement height for next line to be drawn
     segment_count <- segment_count + phylog(table, table$affected[i], end_time, table$time[i], segment_count)
   }
   return(segment_count)
 }
 
-# AXIS
+# draw axis and set plot
 ticks <- seq(0, end_time, by = 1)
 labels <- as.character(ticks)
 plot(1, type = "n", xlim = c(0, end_time + 0.1), ylim = c(0, 1), xlab = "Time", ylab = "", axes = FALSE)
