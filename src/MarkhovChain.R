@@ -12,12 +12,12 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
   I_list <- list(p_0)
   S_list <- population[-p_0]
   R_list <- c()
-  table <- matrix(nrow=0, ncol=7)
-  colnames(table) <- c("time", "infector", "affected", "S", "I", "R", "I List")
+  table <- matrix(nrow=0, ncol=6)
+  colnames(table) <- c("time", "infector", "affected", "S", "I", "R")
   current_time <- 0
   infecter <- 0
   affected <- 0
-  table <- rbind(table, c(0,0,0,S,I,R, toString(I_list)))
+  table <- rbind(table, c(0,0,0,S,I,R))
   while (current_time < end_time & I > 0 & (gamma > 0 || I < N)){
     next_time <- rexp(1, beta * S *I / N + gamma *I)
     current_time <- current_time + next_time
@@ -40,7 +40,7 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
       # S_list <- c(S_list, affected)
       R_list <- c(R_list, infecter)
     }
-    table <- rbind(table, c(current_time, infecter, affected, S, I, R, toString(I_list)))
+    table <- rbind(table, c(current_time, infecter, affected, S, I, R))
   }
   if (current_time > end_time) table <- table[-nrow(table), ]
   table <- data.frame(table)

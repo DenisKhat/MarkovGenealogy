@@ -7,21 +7,29 @@ methodA <- function(I, t, N){
 }
 
 
-table <- markhov_virus(10, 0.6, 0, 59, 1)[]
+table <- markhov_virus(60, 1, 0, 59, 1)
 combined <- list(times = table$time, I=table$I)
-data = as.data.frame(do.call(cbind, combined))
+df = as.data.frame(do.call(cbind, combined))
 
 
 methodB <- function(data, N){
-  # data <- data[order(data$times),]
-  LB <- function(beta) markhov_probability(data$times[[1]], beta, 0, N-1, 1)[[data$I[[1]]]]
-  for (i in 2:nrow(data)){
-    LB <- LB(beta) * function(beta) markhov_probability(data$times[[i]] - data$times[[i-1]], beta, 0, N-data$I[[i-1]], data$I[[i-1]])[[data$I[[i]]]]
+  data <- data[order(do.call(rbind, data$times)),]
+  row.names(data) <- NULL
+  print(data)
+  LB <- function(beta){
+    val = markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] ]
+    for (i in 2:nrow(data)){
+      val = val * markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[data[[i,2]]]
+    }
+    return(val)
   }
-  return(optimize(LB, interval=c(0,1), maximum = TRUE))[["maximum"]]
+  return(optimize(LB, interval=c(0,2), maximum = TRUE)$maximum)
 }
 
-# print(data)
-methodB(data, 60)
+df = df[sample(nrow(df), 30), ]
+# data <- data[order(do.call(rbind, data$times)),]
+# print(df)
+# df[[4,1]]
+methodB(df, 60)
 
 #df$times[i]
