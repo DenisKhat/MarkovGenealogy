@@ -1,5 +1,7 @@
 ## R notebook to compare and plot the Markhov Chain probability distribution, vs a sample after running the experiment.
+
 ### Load libraries and set parameters
+
 ```{r}
 library(ggplot2)
 library(Matrix)
@@ -7,12 +9,14 @@ knitr::opts_chunk$set(echo = TRUE)
 source('MarkhovChain.R')
 source('Experiment.R')
 
-t <-  1
+t <-  5
 Beta <- 0.6
 Gamma <- 0
 N <- 60
 ```
+
 ### Generate overlapping graph
+
 ```{r}
 mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1, immunity=TRUE)
 exp_df = experiment(1000, t, N, Beta, Gamma, N-1, 1)
