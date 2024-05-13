@@ -18,6 +18,8 @@ I_at_t <- function(data, time){
 }
 
 methodC <- function(data, t_final,N){
+  x <- seq(0, 1, by = 0.01)
+  y <- c()
   #data must be incremented times. (corresponding to time of infections)
   s_obs = c(0,diff(data))
   M = length(data)
@@ -27,12 +29,25 @@ methodC <- function(data, t_final,N){
     p_M_last = 1 - pexp(t_final-data[M], lambda[M+1])
     return(p_M_last * prod(as.vector(pdfs)))
   }
+  
+  for (b in x){
+    y <- c(y, LC(b))
+  }
+  spline_fun <- splinefun(x, y)
+  spline_interp <- data.frame(beta = x, LA = spline_fun(seq(0, 1, by = 0.01)))
+  p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
+    geom_point() +
+    geom_line() +
+    xlab('B') +
+    ylab('L(B)')
+  print(p)
+  
   return(optimize(LC, interval=c(0,1), maximum = TRUE)[["maximum"]])
 }
-# dfc = as.vector(do.call(rbind, df[["times"]]))
-# methodC(dfc, 10, 60)
+dfc = as.vector(do.call(rbind, df[["times"]]))
+methodC(dfc, 10, 60)
 
-# I <- I_at_t(df, time)
+I <- I_at_t(df, time)
 
 methodA <- function(I, t, N){
   x <- seq(0, 1, by = 0.01)
@@ -48,6 +63,7 @@ methodA <- function(I, t, N){
   # list_A <- list(beta = x, LA = y)
   # df_A <- as.data.frame(do.call(cbind, list_A))
   p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
+      geom_point() +
       geom_line() +
       xlab('B') +
       ylab('L(B)')
@@ -59,6 +75,9 @@ methodA <- function(I, t, N){
 
 
 methodB <- function(data, N){
+  x <- seq(0, 1, by = 0.01)
+  y <- c()
+  
   data <- data[order(do.call(rbind, data$times)),]
   row.names(data) <- NULL
   # print(data)
@@ -69,8 +88,22 @@ methodB <- function(data, N){
     }
     return(val)
   }
+  
+  for (b in x){
+    y <- c(y, LB(b))
+  }
+  spline_fun <- splinefun(x, y)
+  spline_interp <- data.frame(beta = x, LA = spline_fun(seq(0, 1, by = 0.01)))
+  p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
+    geom_point() +
+    geom_line() +
+    xlab('B') +
+    ylab('L(B)')
+  print(p)
+  
   return(optimize(LB, interval=c(0,2), maximum = TRUE)$maximum)
 }
+# methodB(df, 60)
 
 # dfb = df[sample(nrow(df), 8),]
 # print(dfb)
