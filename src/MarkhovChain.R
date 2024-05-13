@@ -73,4 +73,4 @@ markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initia
   return(as.matrix(mass_matrix))
 }
 
-
+markhov_probability(0, beta = 0.4, gamma = 0, initial_S = 59, initial_I = 1)[[1]]

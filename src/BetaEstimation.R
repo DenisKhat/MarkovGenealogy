@@ -29,10 +29,10 @@ methodC <- function(data, t_final,N){
   }
   return(optimize(LC, interval=c(0,1), maximum = TRUE)[["maximum"]])
 }
-df = as.vector(do.call(rbind, df[["times"]]))
-methodC(df, 10, 60)
+# dfc = as.vector(do.call(rbind, df[["times"]]))
+# methodC(dfc, 10, 60)
 
-I <- I_at_t(df, time)
+# I <- I_at_t(df, time)
 
 methodA <- function(I, t, N){
   x <- seq(0, 1, by = 0.01)
@@ -55,26 +55,28 @@ methodA <- function(I, t, N){
 
   return(optimize(LA, interval=c(0,1), maximum = TRUE)[["maximum"]])
 }
-methodA(I, time, N)
+# methodA(I, time, N)
 
 
 methodB <- function(data, N){
   data <- data[order(do.call(rbind, data$times)),]
   row.names(data) <- NULL
-  print(data)
+  # print(data)
   LB <- function(beta){
-    val = markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] ]
+    val = markhov_probability(data[[1,1]], beta, 0, N-1, 1)[[ data[[1,2]] + 1 ]]
     for (i in 2:nrow(data)){
-      val = val * markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[data[[i,2]]]
+      val = val * markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]]
     }
     return(val)
   }
   return(optimize(LB, interval=c(0,2), maximum = TRUE)$maximum)
 }
 
-df = df[sample(nrow(df), 30), ]
+# dfb = df[sample(nrow(df), 8),]
+# print(dfb)
+# methodB(dfb, 60)
+
 # data <- data[order(do.call(rbind, data$times)),]
 # print(df)
 # df[[4,1]]
-# methodB(df, 60)
 
