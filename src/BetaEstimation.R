@@ -46,7 +46,7 @@ methodC <- function(data, t_final,N){
   return(optimize(LC, interval=c(0,1), maximum = TRUE)[["maximum"]])
 }
 dfc = as.vector(do.call(rbind, df[["times"]]))
-methodC(dfc, 10, 60)
+# methodC(dfc, 10, 60)
 
 I <- I_at_t(df, time)
 
@@ -109,7 +109,7 @@ methodB <- function(data, N){
 # dfb = df[sample(nrow(df), 8),]
 
 # just some code to fake sampling data from one simulation
-sampled_times = c(3, 5, 7, 9, 11)
+sampled_times = c(1, 3, 5, 7, 9)
 times = as.vector(df[["times"]])
 times = do.call(rbind, times)
 # print(times)
@@ -117,8 +117,9 @@ times = do.call(rbind, times)
 sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i,times)), 2]])
 # print(sampled_I)
 dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
-print(dfb$times)
+# print(dfb$times)
 methodB(dfb, 60)
+methodC(dfc, 10, 60)
 
 # data <- data[order(do.call(rbind, data$times)),]
 # print(df)
