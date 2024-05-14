@@ -1,4 +1,5 @@
 source('src/MarkhovChain.R')
+source('src/Experiment.R')
 
 time = 10
 N = 60
@@ -78,7 +79,7 @@ methodB <- function(data, N){
   x <- seq(0, 1, by = 0.01)
   y <- c()
   
-  data <- data[order(do.call(rbind, data$times)),]
+  data <- data[order(data$times),]
   row.names(data) <- NULL
   # print(data)
   LB <- function(beta){
@@ -106,8 +107,18 @@ methodB <- function(data, N){
 # methodB(df, 60)
 
 # dfb = df[sample(nrow(df), 8),]
-# print(dfb)
-# methodB(dfb, 60)
+
+# just some code to fake sampling data from one simulation
+sampled_times = c(3, 5, 7, 9, 11)
+times = as.vector(df[["times"]])
+times = do.call(rbind, times)
+# print(times)
+# print(df)
+sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i,times)), 2]])
+# print(sampled_I)
+dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
+print(dfb$times)
+methodB(dfb, 60)
 
 # data <- data[order(do.call(rbind, data$times)),]
 # print(df)
