@@ -18,6 +18,19 @@ I_at_t <- function(data, time){
   return(I)
 }
 
+get_MLE <- function(func, alpha){
+  MLE <- optim(0.5, func, method = "Brent", lower = 0, upper= 1, hessian = TRUE)
+  
+  mle <- MLE$par
+  var <- solve(MLE$hessian[[1,1]])
+  
+  z <- qnorm(alpha / 2, lower.tail = FALSE)
+  lower <- (mle - z * sqrt(var))
+  upper <- (mle + z * sqrt(var))
+    
+  return(list(mle, lower, upper))
+}
+
 methodC <- function(data, t_final,N){
   x <- seq(0, 1, by = 0.01)
   y <- c()
@@ -31,22 +44,30 @@ methodC <- function(data, t_final,N){
     return(p_M_last * prod(as.vector(pdfs)))
   }
   
-  for (b in x){
-    y <- c(y, LC(b))
+  log_LC <- function(beta){
+    -(log(LC(beta)))
   }
-  spline_fun <- splinefun(x, y)
-  spline_interp <- data.frame(beta = x, LA = spline_fun(seq(0, 1, by = 0.01)))
-  p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
+  
+  for (b in x){
+    y <- c(y, -log_LC(b))
+  }
+  
+  max <- get_MLE(log_LC, 0.05)
+  
+  
+  df <- data.frame(beta = x, LA = y)
+  p <- ggplot(df, aes(x = beta, y = LA)) +
     geom_point() +
     geom_line() +
     xlab('B') +
     ylab('L(B)')
   print(p)
   
-  return(optimize(LC, interval=c(0,1), maximum = TRUE)[["maximum"]])
+  
+  return(max)
 }
 dfc = as.vector(do.call(rbind, df[["times"]]))
-# methodC(dfc, 10, 60)
+methodC(dfc, 10, 60)
 
 I <- I_at_t(df, time)
 
@@ -118,8 +139,8 @@ sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i
 # print(sampled_I)
 dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
 # print(dfb$times)
-methodB(dfb, 60)
-methodC(dfc, 10, 60)
+# methodB(dfb, 60)
+# methodC(dfc, 10, 60)
 
 # data <- data[order(do.call(rbind, data$times)),]
 # print(df)
