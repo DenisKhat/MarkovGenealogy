@@ -112,7 +112,7 @@ methodB <- function(data, N){  # METHODS A AND B
   
   df <- data.frame(beta = x, LA = y)
   p <- ggplot(df, aes(x = beta, y = LA)) +
-    geom_point() +
+    # geom_point() +
     geom_line() +
     annotate("segment", x = lower, y = -Inf, xend = lower, yend = y_lower, linetype = "dashed", color = "red") +
     annotate("segment", x = upper, y = -Inf, xend = upper, yend = y_upper, linetype = "dashed", color = "red") +
@@ -120,7 +120,8 @@ methodB <- function(data, N){  # METHODS A AND B
     annotate("segment", x = beta, y = -Inf, xend = beta, yend = y_true, color = "blue") + 
     ggtitle("Method A/B") + 
     xlab('Beta') +
-    ylab('Log-Likelihood')
+    ylab('Log-Likelihood') +
+    labs(caption = paste("lower:", lower, "max:", max, "upper:", upper, "beta:", beta))
   # print(p)
   
   return(list(mle, p))
@@ -162,7 +163,7 @@ methodC <- function(data, t_final,N){
   
   df <- data.frame(beta = x, LA = y)
   p <- ggplot(df, aes(x = beta, y = LA)) +
-    geom_point() +
+    # geom_point() + 
     geom_line() +
     annotate("segment", x = lower, y = -Inf, xend = lower, yend = y_lower, linetype = "dashed", color = "red") +
     annotate("segment", x = upper, y = -Inf, xend = upper, yend = y_upper, linetype = "dashed", color = "red") +
@@ -170,7 +171,8 @@ methodC <- function(data, t_final,N){
     annotate("segment", x = beta, y = -Inf, xend = beta, yend = y_true, color = "blue") + 
     ggtitle("Method C") + 
     xlab('Beta') +
-    ylab('Log-Likelihood')
+    ylab('Log-Likelihood') + 
+    labs(caption = paste("lower:", lower, "max:", max, "upper:", upper, "beta:", beta))
   # print(p)
   
   
