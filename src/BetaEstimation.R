@@ -41,7 +41,7 @@ methodC <- function(data, t_final,N){
     geom_line() +
     xlab('B') +
     ylab('L(B)')
-  print(p)
+  # print(p)
   
   return(optimize(LC, interval=c(0,1), maximum = TRUE)[["maximum"]])
 }
@@ -119,7 +119,7 @@ sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i
 dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
 # print(dfb$times)
 methodB(dfb, 60)
-methodC(dfc, 10, 60)
+# methodC(dfc, 10, 60)
 
 # data <- data[order(do.call(rbind, data$times)),]
 # print(df)

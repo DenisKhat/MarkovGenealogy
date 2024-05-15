@@ -8,11 +8,11 @@ closest_lower <- function(target, numbers) {
   return(max(numbers[numbers < target]))
 }
 
-experiment <- function(n, time, N, beta, gamma, S, I){
+experiment <- function(n, time, N, beta, gamma, S, I, SIS=FALSE){
   I_at_time <- c(0:N) # x axis
   counts <- rep(0, N+1)
   for (i in 1:n){
-    table <- markhov_virus(end_time=time+1,beta=beta, gamma=gamma, S=S, I=I) # produce table
+    table <- markhov_virus(end_time=time+1,beta=beta, gamma=gamma, S=S, I=I, R=0, SIS=SIS) # produce table
     index <- which(table$time == time)  # get index of desired time
     
     if (length(index) == 0){ # if no event at exact time
