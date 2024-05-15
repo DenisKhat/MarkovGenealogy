@@ -9,17 +9,17 @@ knitr::opts_chunk$set(echo = TRUE)
 source('MarkhovChain.R')
 source('Experiment.R')
 
-t <-  5
-Beta <- 0.6
-Gamma <- 0
-N <- 60
+t <-  40
+Beta <- 0.8
+Gamma <- 0.44
+N <- 100
 ```
 
 ### Generate overlapping graph
 
 ```{r}
-mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1, immunity=TRUE)
-exp_df = experiment(1000, t, N, Beta, Gamma, N-1, 1)
+mass_matrix = markhov_probability(times=t, beta=Beta, gamma=Gamma, initial_S=N-1, initial_I=1, immunity=FALSE)
+exp_df = experiment(1000, t, N, Beta, Gamma, N-1, 1, SIS=TRUE)
 print(as.vector(exp_df[["probs"]]))
 df = data.frame(I=as.integer(colnames(mass_matrix)), P=as.vector(mass_matrix), E=as.vector(exp_df[["probs"]]))
 # print(df["E"])

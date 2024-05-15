@@ -4,7 +4,7 @@ library(gridExtra)  # install.packages("gridExtra")
 library(Matrix)
 
 
-markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
+markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, SIS=FALSE){
   #output value as: "time_of_event: infected/0, infected/recovered, 
   N <- S + I + R
   population <- 1:N
@@ -32,13 +32,19 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0){
     }
     else {
       # S = S + 1
-      I = I - 1
-      R = R + 1
       infecter <- sample(I_list, 1)
       affected <- 0
+      if (!SIS) {
+        R = R + 1
+        R_list <- c(R_list, infecter)
+        }
+      else {
+        S = S + 1
+        S_list <- c(S_list, infecter)
+      }
+      I = I - 1
       I_list <- setdiff(I_list, c(infecter))
       # S_list <- c(S_list, affected)
-      R_list <- c(R_list, infecter)
     }
     table <- rbind(table, c(current_time, infecter, affected, S, I, R))
   }

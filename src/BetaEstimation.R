@@ -80,10 +80,7 @@ methodA <- function(I, t, N){
     y <- c(y, LA(b))
   }
   # print(y)
-  spline_fun <- splinefun(x, y)
-  spline_interp <- data.frame(beta = x, LA = spline_fun(seq(0, 1, by = 0.01)))
-  # list_A <- list(beta = x, LA = y)
-  # df_A <- as.data.frame(do.call(cbind, list_A))
+  df <- data.frame(beta = x, LA = y)
   p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
       geom_point() +
       geom_line() +
@@ -114,8 +111,7 @@ methodB <- function(data, N){
   for (b in x){
     y <- c(y, LB(b))
   }
-  spline_fun <- splinefun(x, y)
-  spline_interp <- data.frame(beta = x, LA = spline_fun(seq(0, 1, by = 0.01)))
+  df <- data.frame(beta = x, LA = y)
   p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
     geom_point() +
     geom_line() +
