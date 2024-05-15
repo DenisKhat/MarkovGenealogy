@@ -81,7 +81,7 @@ methodA <- function(I, t, N){
   }
   # print(y)
   df <- data.frame(beta = x, LA = y)
-  p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
+  p <- ggplot(df, aes(x = beta, y = LA)) +
       geom_point() +
       geom_line() +
       xlab('B') +
@@ -112,7 +112,7 @@ methodB <- function(data, N){
     y <- c(y, LB(b))
   }
   df <- data.frame(beta = x, LA = y)
-  p <- ggplot(spline_interp, aes(x = beta, y = LA)) +
+  p <- ggplot(df, aes(x = beta, y = LA)) +
     geom_point() +
     geom_line() +
     xlab('B') +
