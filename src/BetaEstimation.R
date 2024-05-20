@@ -4,7 +4,7 @@ source('src/Experiment.R')
 
 # time = 30
 N = 60
-beta = 0.4
+beta = 0.6
 
 table <- markhov_virus(10, beta, 0, 59, 1)
 combined <- list(times = table$time, I=table$I)
@@ -21,15 +21,15 @@ I_at_t <- function(data, time){
 }
 
 get_MLE <- function(func, alpha){
-  MLE <- optim(0.5, func, method = "Brent", lower = 0, upper= 1, hessian = TRUE)
+  MLE <- optim(0.5, func, method = "L-BFGS-B", lower = 0.2, upper= 0.8, hessian = FALSE)
   
   mle <- MLE$par
-  var <- solve(MLE$hessian[[1,1]])
+  # var <- solve(MLE$hessian[[1,1]])
+  # z <- qnorm(alpha / 2, lower.tail = FALSE)
   
-  z <- qnorm(alpha / 2, lower.tail = FALSE)
   chi <- qchisq(p = 1-alpha, df = 1)
-  lower <- (mle - z * sqrt(var))
-  upper <- (mle + z * sqrt(var))
+  # lower <- (mle - z * sqrt(var))
+  # upper <- (mle + z * sqrt(var))
   wilks_cutoff <-  -func(mle) - chi/2
   x_points <- seq(0, 10, by=0.01)
   y_points <- sapply(x_points, function(x) -func(x) - wilks_cutoff)
@@ -38,6 +38,8 @@ get_MLE <- function(func, alpha){
   # roots <- uniroot.all(f=function(x) -func(x) - wilks_cutoff, interval = c(0,1), n=2)
   lower_wilks = uniroot(curve, lower = 0, upper=mle)$root
   upper_wilks = uniroot(curve, lower = mle, upper = 10)$root
+  lower = uniroot(curve, lower = 0, upper=mle)$root
+  upper = uniroot(curve, lower = mle, upper = 10)$root
   return(list(mle, lower, upper, lower_wilks, upper_wilks))
 }
 
@@ -90,24 +92,20 @@ methodB <- function(data, N){  # METHODS A AND B
   data <- data[order(data$times),]
   row.names(data) <- NULL
   LB <- function(beta){
-    val = markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] + 1 ]
+    val = log(markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] + 1 ])
     if (length(data) > 2){
       for (i in 2:nrow(data)){
-        val = val * markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]]
+        val = val + log(markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]])
       }
     }
     return(val)
   }
   
-  log_LB <- function(beta){
-    -(log(LB(beta)))
-  }
-  
   for (b in x){
-    y <- c(y, -log_LB(b))
+    y <- c(y, LB(b))
   }
   
-  mle <- get_MLE(log_LB, 0.05)
+  mle <- get_MLE(function(x) -LB(x), 0.05)
   max <- mle[[1]]
   lower <- mle[[2]]
   upper <- mle[[3]]
@@ -115,16 +113,16 @@ methodB <- function(data, N){  # METHODS A AND B
   w_upper <- mle[[5]]
   
   
-  y_max <- -log_LB(max)
-  y_lower <- -log_LB(lower)
-  y_upper <- -log_LB(upper)
-  y_true <- -log_LB(beta)
-  y_w_lower <- -log_LB(w_lower)
-  y_w_upper <- -log_LB(w_upper)
+  y_max <- LB(max)
+  y_lower <- LB(lower)
+  y_upper <- LB(upper)
+  y_true <- LB(beta)
+  y_w_lower <- LB(w_lower)
+  y_w_upper <- LB(w_upper)
   
   
-  df <- data.frame(beta = x, LA = y)
-  p <- ggplot(df, aes(x = beta, y = LA)) +
+  df <- data.frame(beta = x, LB = y)
+  p <- ggplot(df, aes(x = beta, y = LB)) +
     # geom_point() +
     geom_line() +
     annotate("segment", x = w_lower, y = -Inf, xend = w_lower, yend = y_w_lower, linetype = "dashed", color = "olivedrab") +
@@ -133,7 +131,7 @@ methodB <- function(data, N){  # METHODS A AND B
     annotate("segment", x = upper, y = -Inf, xend = upper, yend = y_upper, linetype = "dashed", color = "red") +
     annotate("segment", x = max, y = -Inf, xend = max, yend = y_max, color = "red") +
     annotate("segment", x = beta, y = -Inf, xend = beta, yend = y_true, color = "blue") + 
-    coord_cartesian(xlim=c(0.01, 1), ylim=c(-100, 2)) +
+    coord_cartesian(xlim=c(0.01, 1), ylim=c(-100, y_max)) +
     ggtitle("Method A/B") + 
     xlab('Beta') +
     ylab('Log-Likelihood') +
@@ -152,37 +150,37 @@ methodC <- function(data, t_final, N){
   s_obs = c(0,diff(data))
   M = length(data)
   LC <- function(beta) {
+    if (M == 0){
+      return(log(1-pexp(t_final, lambda[1])))
+    }
     lambda = sapply(seq(N), function(i) beta * (N-i) * i / N)
     pdfs = sapply(seq(M), function(i) dexp(s_obs[i],lambda[i]))
-    p_M_last = 1 - pexp(t_final-data[M], lambda[M+1])
-    if (is.na(p_M_last)) p_M_last <- 1
+    log_pdfs = sapply(pdfs[1:M-1], log)
+    p_M_last = log(1 - pexp(t_final-data[M], lambda[M+1]))
+    # if (is.na(p_M_last)) p_M_last <- 0
     # print(p_M_last)
     # print(p_M_last)
     # print(p_M_last * prod(as.vector(pdfs)))
-    return(p_M_last * prod(as.vector(pdfs)))
-  }
-  
-  log_LC <- function(beta){
-    -(log(LC(beta)))
+    return(p_M_last + sum(as.vector(log_pdfs)))
   }
   
   for (b in x){
-    y <- c(y, -log_LC(b))
+    y <- c(y, LC(b))
   }
-  
-  mle <- get_MLE(log_LC, 0.05)
+  print(LC(0.5))
+  mle <- get_MLE(function(x) -LC(x), 0.05)
   max <- mle[[1]]
   lower <- mle[[2]]
   upper <- mle[[3]]
   w_lower <- mle[[4]]
   w_upper <- mle[[5]]
   
-  y_max <- -log_LC(max)
-  y_lower <- -log_LC(lower)
-  y_upper <- -log_LC(upper)
-  y_true <- -log_LC(beta)
-  y_w_lower <- -log_LC(w_lower)
-  y_w_upper <- -log_LC(w_upper)
+  y_max <- LC(max)
+  y_lower <- LC(lower)
+  y_upper <- LC(upper)
+  y_true <- LC(beta)
+  y_w_lower <- LC(w_lower)
+  y_w_upper <- LC(w_upper)
   
   df <- data.frame(beta = x, LC = y)
   p <- ggplot(df, aes(x = beta, y = LC)) +
@@ -194,7 +192,7 @@ methodC <- function(data, t_final, N){
     annotate("segment", x = upper, y = -Inf, xend = upper, yend = y_upper, linetype = "dashed", color = "red") +
     annotate("segment", x = max, y = -Inf, xend = max, yend = y_max, color = "red") + 
     annotate("segment", x = beta, y = -Inf, xend = beta, yend = y_true, color = "blue") + 
-    coord_cartesian(xlim=c(0.01, 1), ylim=c(-100, 2)) +
+    coord_cartesian(xlim=c(0.01, 1), ylim=c(-100, y_max)) +
     ggtitle("Method C") + 
     xlab('Beta') +
     ylab('Log-Likelihood') + 
@@ -212,7 +210,7 @@ methodC <- function(data, t_final, N){
 
 # just some code to fake sampling data from one simulation
 I <- I_at_t(df, time)
-sampled_times = c(10) # FOR METHOD A/B
+sampled_times = c(1,5,8, 10) # FOR METHOD A/B
 times = as.vector(df[["times"]])
 times = do.call(rbind, times)
 
