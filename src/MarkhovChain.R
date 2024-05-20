@@ -4,21 +4,35 @@ library(gridExtra)  # install.packages("gridExtra")
 library(Matrix)
 
 
-markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, SIS=FALSE){
-  #output value as: "time_of_event: infected/0, infected/recovered, 
+markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){
+  #output value as: "time_of_event: infected/0, infected/recovered,
   N <- S + I + R
-  population <- 1:N
-  p_0 = sample(population, 1)
-  I_list <- list(p_0)
-  S_list <- population[-p_0]
-  R_list <- c()
-  table <- matrix(nrow=0, ncol=6)
-  colnames(table) <- c("time", "infector", "affected", "S", "I", "R")
-  current_time <- 0
+  pop <- 1:N
+  if (is.null(I_list)){
+    I_list <- list(sample(pop, 1))
+  }
+  if (is.null(S_list)){
+    S_list <- list(setdiff(1:S, I_list[[1]]))
+  }
+  if (is.null(R_list)){
+    R_list <- list(c())
+  }
+  # population <- 1:N
+  p_0 = I_list[1]
+  I_list <- I_list
+  S_list <- S_list
+  R_list <- R_list
+  table <- matrix(nrow=0, ncol=9)
+  colnames(table) <- c("time", "infector", "affected", "S", "I", "R", "S_list", "I_list", "R_list")
+  current_time <- curr_time
   infecter <- 0
   affected <- 0
-  table <- rbind(table, c(0,0,0,S,I,R))
+  R <- length(unlist(R_list))
+  table <- rbind(table, c(curr_time, 0, 0, S ,I, R, S_list, I_list, R_list))
   while (current_time < end_time & I > 0 & (gamma > 0 || I < N)){
+    I_list <- unlist(I_list)
+    S_list <- unlist(S_list)
+    R_list <- unlist(R_list)
     next_time <- rexp(1, beta * S *I / N + gamma *I)
     current_time <- current_time + next_time
     U <- runif(1)
@@ -46,16 +60,21 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, SIS=FALSE){
       I_list <- setdiff(I_list, c(infecter))
       # S_list <- c(S_list, affected)
     }
-    table <- rbind(table, c(current_time, infecter, affected, S, I, R))
+    I_list <- list(I_list)
+    S_list <- list(S_list)
+    R_list <- list(R_list)
+    table <- rbind(table, c(current_time, infecter, affected, S, I, R, S_list, I_list, R_list))
   }
   if (current_time > end_time) table <- table[-nrow(table), ]
   table <- data.frame(table)
-  table$time <- as.numeric(table$time)
+  # table$time <- as.numeric(table$time)
   return(table)
 }
 
-# table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1)
-# p_0 <- table$infector[2]
+# table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1, curr_time=5)
+# print(table)
+# p_0 <- as.numeric(table$infector[2])
+# print(p_0)
 
 markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=TRUE){
   # Returns a matrix of probabilities, given time and I.
