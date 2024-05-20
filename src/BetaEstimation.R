@@ -133,7 +133,7 @@ methodB <- function(data, N){  # METHODS A AND B
     annotate("segment", x = upper, y = -Inf, xend = upper, yend = y_upper, linetype = "dashed", color = "red") +
     annotate("segment", x = max, y = -Inf, xend = max, yend = y_max, color = "red") +
     annotate("segment", x = beta, y = -Inf, xend = beta, yend = y_true, color = "blue") + 
-    coord_cartesian(xlim=c(0, 1)) +
+    coord_cartesian(xlim=c(0.01, 1), ylim=c(-100, 2)) +
     ggtitle("Method A/B") + 
     xlab('Beta') +
     ylab('Log-Likelihood') +
@@ -194,7 +194,7 @@ methodC <- function(data, t_final, N){
     annotate("segment", x = upper, y = -Inf, xend = upper, yend = y_upper, linetype = "dashed", color = "red") +
     annotate("segment", x = max, y = -Inf, xend = max, yend = y_max, color = "red") + 
     annotate("segment", x = beta, y = -Inf, xend = beta, yend = y_true, color = "blue") + 
-    coord_cartesian(xlim=c(0, 1)) +
+    coord_cartesian(xlim=c(0.01, 1), ylim=c(-100, 2)) +
     ggtitle("Method C") + 
     xlab('Beta') +
     ylab('Log-Likelihood') + 
