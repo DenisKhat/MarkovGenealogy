@@ -210,14 +210,14 @@ methodC <- function(data, t_final, N){
 
 # just some code to fake sampling data from one simulation
 I <- I_at_t(df, time)
-sampled_times = c(1,5,8, 10) # FOR METHOD A/B
+sampled_times = c(10) # FOR METHOD A/B
 times = as.vector(df[["times"]])
 times = do.call(rbind, times)
 
 sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i,times)), 2]])
 
 dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
-print(dfb)
+# print(dfb)
 dfc = as.vector(do.call(rbind, df[["times"]]))
 
 # A <- methodA(I, time, N)
