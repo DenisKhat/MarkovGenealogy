@@ -150,11 +150,14 @@ methodC <- function(data, t_final, N){
   s_obs = c(0,diff(data))
   M = length(data)
   LC <- function(beta) {
+    if (M == 0){
+      return(log(1-pexp(t_final, lambda[1])))
+    }
     lambda = sapply(seq(N), function(i) beta * (N-i) * i / N)
     pdfs = sapply(seq(M), function(i) dexp(s_obs[i],lambda[i]))
     log_pdfs = sapply(pdfs[1:M-1], log)
     p_M_last = log(1 - pexp(t_final-data[M], lambda[M+1]))
-    if (is.na(p_M_last)) p_M_last <- 0
+    # if (is.na(p_M_last)) p_M_last <- 0
     # print(p_M_last)
     # print(p_M_last)
     # print(p_M_last * prod(as.vector(pdfs)))
