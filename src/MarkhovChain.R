@@ -8,31 +8,48 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
   #output value as: "time_of_event: infected/0, infected/recovered,
   N <- S + I + R
   pop <- 1:N
+  
+  # initialize I_list, S_list, R_list if none given
+  # store as lists so they can be stored in matrix
   if (is.null(I_list)){
     I_list <- list(sample(pop, 1))
+  }
+  else{
+    I_list <- I_list
   }
   if (is.null(S_list)){
     S_list <- list(setdiff(1:S, I_list[[1]]))
   }
+  else{
+    S_list <- S_list
+  }
   if (is.null(R_list)){
     R_list <- list(c())
   }
-  # population <- 1:N
-  p_0 = I_list[1]
-  I_list <- I_list
-  S_list <- S_list
-  R_list <- R_list
+  else{
+    R_list <- R_list
+  }
+  p_0 = I_list[1]  # get patient 0 
+  
+  # initialize matrix
   table <- matrix(nrow=0, ncol=9)
   colnames(table) <- c("time", "infector", "affected", "S", "I", "R", "S_list", "I_list", "R_list")
+  
+  # initialize other params
   current_time <- curr_time
   infecter <- 0
   affected <- 0
-  R <- length(unlist(R_list))
+  
+  R <- length(unlist(R_list))  # get number of recovered
   table <- rbind(table, c(curr_time, 0, 0, S ,I, R, S_list, I_list, R_list))
+  
   while (current_time < end_time & I > 0 & (gamma > 0 || I < N)){
+    # unlist to access as vector
     I_list <- unlist(I_list)
     S_list <- unlist(S_list)
     R_list <- unlist(R_list)
+    
+    # get next time
     next_time <- rexp(1, beta * S *I / N + gamma *I)
     current_time <- current_time + next_time
     U <- runif(1)
@@ -68,6 +85,7 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
       I_list <- setdiff(I_list, c(infecter))
       # S_list <- c(S_list, affected)
     }
+    # put in list to store in matrix
     I_list <- list(I_list)
     S_list <- list(S_list)
     R_list <- list(R_list)
