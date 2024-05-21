@@ -27,8 +27,8 @@ last <- last[-1,] # to include/not include the 5
 # print(last[, 1:6])
 
 full_table <- rbind(first, last)
-p_0 <- full_table$infector[2]
-phylog(full_table, p_0, end_time)
+# p_0 <- full_table$infector[2]
+# phylog(full_table, p_0, end_time)
 
 # print(full_table$time)
 # print(full_table[, 1:6])
@@ -38,4 +38,34 @@ likelihood_C <- function(beta) loglike_C(beta, times = infection_times, T_1 = ch
 # likelihood_C(c(0.5, 0.5))
 betas_hat = optim(c(0.5,0.5), likelihood_C)
 betas_hat$par
+
+
+heatmap <- function(times, T1, TF, N){
+  b1 <- seq(0.01, 1, by = 0.01)
+  b2 <- seq(0.01, 1, by = 0.01)
+  
+  LF <- function(b1, b2){
+    beta <- c(b1, b2)
+    loglike_C(beta, times = times, T_1 = T1, T_f=TF, N = N)
+  } 
+  matrix_result <- outer(b1, b2, Vectorize(LF))
+  print(matrix_result)
+  
+  # NORMALIZE
+  # min_val <- min(matrix_result)
+  # max_val <- max(matrix_result)
+  # normalized_result <- (matrix_result - min_val) / (max_val - min_val)
+  
+  data <- expand.grid(b1 = b1, b2 = b2)
+  # data$Z <- as.vector(normalized_result)
+  data$Z <- as.vector(matrix_result)
+
+  p <- ggplot(data, aes(b1, b2, fill= Z)) +
+    geom_tile()+
+    scale_fill_gradient(low="blue", high="red")
+  print(p)
+}
+
+heatmap(infection_times, change_time, end_time, N)
+
 

@@ -7,6 +7,7 @@ library(Matrix)
 markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){
   #output value as: "time_of_event: infected/0, infected/recovered,
   N <- S + I + R
+  print(N)
   pop <- 1:N
   
   # initialize I_list, S_list, R_list if none given
@@ -18,7 +19,7 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
     I_list <- I_list
   }
   if (is.null(S_list)){
-    S_list <- list(setdiff(1:S, I_list[[1]]))
+    S_list <- list(setdiff(1:N, I_list[[1]]))
   }
   else{
     S_list <- S_list
@@ -89,16 +90,19 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
     I_list <- list(I_list)
     S_list <- list(S_list)
     R_list <- list(R_list)
+    print(I_list)
+    print(S_list)
+    print(R_list)
     table <- rbind(table, c(current_time, infecter, affected, S, I, R, S_list, I_list, R_list))
   }
-  if (current_time > end_time) table <- table[-nrow(table), ]
+  if (current_time > end_time) table <- table[-nrow(table), ]  # if remove row append back last infected
   table <- data.frame(table)
   table$time <- as.numeric(table$time)
   return(table)
 }
 # 
-# table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1, curr_time=5)
-# print(table[, 1:6])
+table <- markhov_virus(end_time=10,beta=0.1, gamma=0, S=59, I=1, curr_time=5)
+print(table)
 # p_0 <- as.numeric(table$infector[2])
 # print(p_0)
 
