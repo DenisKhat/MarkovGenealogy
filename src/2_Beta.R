@@ -28,14 +28,15 @@ last <- last[-1,] # to include/not include the 5
 
 full_table <- rbind(first, last)
 p_0 <- full_table$infector[2]
-phylog(full_table, p_0, end_time)
+# phylog(full_table, p_0, end_time)
 
 # print(full_table$time)
 # print(full_table[, 1:6])
 infection_times <- full_table$time
-likelihood_C <- function(beta) loglike_C(beta, times = infection_times, T_1 = change_time, T_f=end_time, N = N)
+likelihood_C <- function(beta) -loglike_C(beta, times = infection_times, T_1 = change_time, T_f=end_time, N = N)
 # likelihood_C(c(0.1,0.4))
 # likelihood_C(c(0.5, 0.5))
-betas_hat = optim(c(0.5,0.5), likelihood_C)
+# print(likelihood_C(c(0.5, 0.5)))
+# print(likelihood_C(c(1, 1)))
+betas_hat = optim(c(0.5,0.5), likelihood_C, method = "L-BFGS-B", lower=c(0.01, 0.01), upper=c(0.99, 0.99))
 betas_hat$par
-
