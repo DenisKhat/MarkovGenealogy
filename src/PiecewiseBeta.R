@@ -65,7 +65,5 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
     return(out)
   }
 }
-
 # loglike_C(betas=c(0.5, 0.5), times=c(0, 0.2, 0.8, 3,  9, 1.2, 3.4, 5.1, 6, 7), T_1 = 5, T_f = 10, N = 60)
-
 # a <- matrix(0, 10, 10)

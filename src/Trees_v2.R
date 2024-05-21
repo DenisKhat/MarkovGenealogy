@@ -53,5 +53,5 @@ axis(1, at = ticks, labels = labels)
 
 
 # TO DISPLAY:
-phylog(table, p_0, end_time)
-print(table[, 1:6])
+# phylog(table, p_0, end_time)
+# print(table[, 1:6])
