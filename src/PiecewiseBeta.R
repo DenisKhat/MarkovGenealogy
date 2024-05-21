@@ -8,7 +8,7 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
   # T_f is the time at which our sampling ends.
   rate1 <- rate(betas[1], N)
   rate2 <- rate(betas[2], N)
-  
+  # print(log(rate2(N-4)))
   # Condition that NOTHING happens at anytime
   # if (length(times) == 0){
   #   return( -rate1(1)*T_1 - rate2(1)*(T_f-T_1))
@@ -24,8 +24,10 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
   M = length(times2) + K
   #K will be the last time a beta1 event happens (not K-1), a little different to board notation.
   #Similarly, with M. M'th is last event that happened, not M-1th. (M+1 first time after T_f)
-  
-  
+  # print("TIMES 1")
+  # print(times1)
+  # print("TIMES 2")
+  # print(times2)
   # Condition that NOTHING happens while beta1 is active
   if (K == 0){
     out <- -rate1(1)*T_1
@@ -50,8 +52,10 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
   # Condition that SOMETHING happens while beta2 active.
   else{
     out <- out + log(rate2(K+1)) - rate2(K+1)*(times[K+1]-T_1)
+    # print(M)
     if(M > K+1){
-      for (i in K+2:M){
+      for (i in seq(K+2,M)){
+        # print(i)
         out <- out + log(rate2(i)) - rate2(i)*(times[i]-times[i-1])
       }
     }
@@ -60,7 +64,6 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
     }
     return(out)
   }
-  #Something happens while beta2 active
 }
 
-loglike_C(betas=c(0.6, 0.3), times=c(0.2, 0.8, 3, 5, 9), T_1 = 5, T_f = 10, N = 60)
+loglike_C(betas=c(0.5, 0.5), times=c(0, 0.2, 0.8, 3,  9, 1.2, 3.4, 5.1, 6, 7), T_1 = 5, T_f = 10, N = 60)

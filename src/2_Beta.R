@@ -1,13 +1,14 @@
 source('src/MarkhovChain.R')
 source('src/Experiment.R')
 source('src/Trees_v2.R')
+source('src/PiecewiseBeta.R')
 height = 1
 
 
 N = 60
-b1 = .99
-b2 = 0.1
-gamma = 0.3
+b1 = 0.3
+b2 = 0.6
+gamma = 0
 change_time = 5
 end_time = 10
 
@@ -21,14 +22,20 @@ first_I <- as.numeric(first$I[nrow(first)])
 
 last <- markhov_virus(end_time, b2, gamma, first_S, first_I, first_R, curr_time=change_time, S_list=first$S_list[nrow(first)], I_list = first$I_list[nrow(first)], R_list=first$R_list[nrow(first)])
 
-
-# last <- last[-1, ]
-print(last[, 1:6])
+first <- first[-1,]
+last <- last[-1,] # to include/not include the 5
+# print(last[, 1:6])
 
 full_table <- rbind(first, last)
 p_0 <- full_table$infector[2]
 phylog(full_table, p_0, end_time)
 
-
-print(full_table[, 1:6])
+# print(full_table$time)
+# print(full_table[, 1:6])
+infection_times <- full_table$time
+likelihood_C <- function(beta) loglike_C(beta, times = infection_times, T_1 = change_time, T_f=end_time, N = N)
+# likelihood_C(c(0.1,0.4))
+# likelihood_C(c(0.5, 0.5))
+betas_hat = optim(c(0.5,0.5), likelihood_C)
+betas_hat$par
 
