@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 source('MarkhovChain.R')
 source('Experiment.R')
 
-t <-  30
+t <-  10
 Beta <- 0.8
 Gamma <- 0.44
 N <- 60

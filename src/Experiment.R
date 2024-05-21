@@ -13,10 +13,10 @@ experiment <- function(n, time, N, beta, gamma, S, I, SIS=FALSE){
   counts <- rep(0, N+1)
   for (i in 1:n){
     table <- markhov_virus(end_time=time+1,beta=beta, gamma=gamma, S=S, I=I, R=0, SIS=SIS) # produce table
-    index <- which(table$time == time)  # get index of desired time
+    index <- which(unlist(table$time == time))  # get index of desired time
     
     if (length(index) == 0){ # if no event at exact time
-      index <- which(table$time == closest_lower(time, table$time)) # look at closest earlier event
+      index <- which(unlist(table$time == closest_lower(time, unlist(table$time)))) # look at closest earlier event
     }
     
     # get the number of infected at time
@@ -35,7 +35,8 @@ experiment <- function(n, time, N, beta, gamma, S, I, SIS=FALSE){
 }
 
 
-
+# df <- experiment(10, 10, 60, 0.7, 0, 59, 1)
+# print(df)
 
 
 

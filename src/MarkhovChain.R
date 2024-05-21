@@ -39,14 +39,22 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
     if (U < (beta * S / N) / (beta * S / N + gamma)) {
       I = I + 1
       S = S - 1
-      infecter <- sample(I_list, 1)
+      if (length(I_list) == 1){
+        infecter <- I_list[1]
+      }else{
+        infecter <- sample(I_list, 1)
+      }
       affected <- sample(S_list, 1)
       S_list <- setdiff(S_list, c(affected))
       I_list <- c(I_list, affected)
     }
     else {
       # S = S + 1
-      infecter <- sample(I_list, 1)
+      if (length(I_list) == 1){
+        infecter <- I_list[1]
+      }else{
+        infecter <- sample(I_list, 1)
+      }
       affected <- 0
       if (!SIS) {
         R = R + 1
@@ -67,12 +75,12 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
   }
   if (current_time > end_time) table <- table[-nrow(table), ]
   table <- data.frame(table)
-  # table$time <- as.numeric(table$time)
+  table$time <- as.numeric(table$time)
   return(table)
 }
-
+# 
 # table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1, curr_time=5)
-# print(table)
+# print(table[, 1:6])
 # p_0 <- as.numeric(table$infector[2])
 # print(p_0)
 

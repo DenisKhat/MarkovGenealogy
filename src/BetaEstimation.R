@@ -2,14 +2,23 @@ library(rootSolve)
 source('src/MarkhovChain.R')
 source('src/Experiment.R')
 
-# time = 30
+time = 10
 N = 60
 beta = 0.6
 
 table <- markhov_virus(10, beta, 0, 59, 1)
+# table$time <- as.numeric(table$time)
+# table$I <- as.numeric(table$I)
+# 
+# print(class(time))
+# print(class(table$time))
+# print(range(table$time))
+# print(time)
+
+
 combined <- list(times = table$time, I=table$I)
 df = as.data.frame(do.call(cbind, combined))
-print(df)
+# print(df)
 
 I_at_t <- function(data, time){
   index <- which(table$time == time)  # get index of desired time
@@ -21,15 +30,15 @@ I_at_t <- function(data, time){
 }
 
 get_MLE <- function(func, alpha){
-  MLE <- optim(0.5, func, method = "L-BFGS-B", lower = 0.2, upper= 0.8, hessian = FALSE)
+  MLE <- optim(0.5, func, method = "L-BFGS-B", lower = 0.2, upper= 0.8, hessian = TRUE)
   
   mle <- MLE$par
-  # var <- solve(MLE$hessian[[1,1]])
-  # z <- qnorm(alpha / 2, lower.tail = FALSE)
+  var <- solve(MLE$hessian[[1,1]])
+  z <- qnorm(alpha / 2, lower.tail = FALSE)
   
   chi <- qchisq(p = 1-alpha, df = 1)
-  # lower <- (mle - z * sqrt(var))
-  # upper <- (mle + z * sqrt(var))
+  lower <- (mle - z * sqrt(var))
+  upper <- (mle + z * sqrt(var))
   wilks_cutoff <-  -func(mle) - chi/2
   x_points <- seq(0, 10, by=0.01)
   y_points <- sapply(x_points, function(x) -func(x) - wilks_cutoff)
@@ -38,8 +47,8 @@ get_MLE <- function(func, alpha){
   # roots <- uniroot.all(f=function(x) -func(x) - wilks_cutoff, interval = c(0,1), n=2)
   lower_wilks = uniroot(curve, lower = 0, upper=mle)$root
   upper_wilks = uniroot(curve, lower = mle, upper = 10)$root
-  lower = uniroot(curve, lower = 0, upper=mle)$root
-  upper = uniroot(curve, lower = mle, upper = 10)$root
+  # lower = uniroot(curve, lower = 0, upper=mle)$root
+  # upper = uniroot(curve, lower = mle, upper = 10)$root
   return(list(mle, lower, upper, lower_wilks, upper_wilks))
 }
 
@@ -93,7 +102,7 @@ methodB <- function(data, N){  # METHODS A AND B
   row.names(data) <- NULL
   LB <- function(beta){
     val = log(markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] + 1 ])
-    if (length(data) > 2){
+      if (length(data) > 2){
       for (i in 2:nrow(data)){
         val = val + log(markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]])
       }
@@ -210,15 +219,17 @@ methodC <- function(data, t_final, N){
 
 # just some code to fake sampling data from one simulation
 I <- I_at_t(df, time)
-sampled_times = c(10) # FOR METHOD A/B
-times = as.vector(df[["times"]])
-times = do.call(rbind, times)
+
+sampled_times <- c(5, 10) # FOR METHOD A/B
+times <- as.list(df[["times"]])
+times <- do.call(rbind, times)
 
 sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i,times)), 2]])
 
 dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
 # print(dfb)
 dfc = as.vector(do.call(rbind, df[["times"]]))
+
 
 # A <- methodA(I, time, N)
 B <- methodB(dfb, 60)
