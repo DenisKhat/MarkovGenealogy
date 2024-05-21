@@ -19,7 +19,7 @@ phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
   
   # if recovery
   if (length(indices) > 0 && table$affected[indices[1]] == 0){ 
-    recovery_time = table$time[indices[1]] # get recovery time
+    recovery_time <- unlist(table$time[indices[1]]) # get recovery time
     # draw line
     segments(time_of_infection, height, recovery_time, height, lwd=2)
     segments(time_of_infection, height, time_of_infection,  height + 0.016 * counter, lwd=2)
@@ -39,7 +39,7 @@ phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
   
   for (i in indices){
     height <<- height - 0.016 # decrement height for next line to be drawn
-    segment_count <- segment_count + phylog(table, table$affected[i], end_time, table$time[i], segment_count)
+    segment_count <- segment_count + phylog(table, unlist(table$affected[i]), end_time, unlist(table$time[i]), segment_count)
   }
   return(segment_count)
 }
@@ -50,8 +50,8 @@ labels <- as.character(ticks)
 plot(1, type = "n", xlim = c(0, end_time + 0.1), ylim = c(0, 1), xlab = "Time", ylab = "", axes = FALSE)
 axis(1, at = ticks, labels = labels)
 
-phylog(table, p_0, end_time)
 
 
-
-print(table[-7])
+# TO DISPLAY:
+# phylog(table, p_0, end_time)
+# print(table[, 1:6])
