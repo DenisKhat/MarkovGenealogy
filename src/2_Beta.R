@@ -5,7 +5,6 @@ source('src/PiecewiseBeta.R')
 library(gridExtra)
 height = 1
 
-
 N = 60
 b1 = 0.3
 b2 = 0.6
@@ -23,16 +22,17 @@ first_I <- as.numeric(first$I[nrow(first)])
 
 last <- markhov_virus(end_time, b2, gamma, first_S, first_I, first_R, curr_time=change_time, S_list=first$S_list[nrow(first)], I_list = first$I_list[nrow(first)], R_list=first$R_list[nrow(first)])
 
-first <- first[-1,]
+# first <- first[-1,]
 last <- last[-1,] # to include/not include the 5
 # print(last[, 1:6])
 
+# PRINT GRAPH
 full_table <- rbind(first, last)
-p_0 <- full_table$infector[2]
+p_0 <- full_table$I_list[1]
 # phylog(full_table, p_0, end_time)
 
 # print(full_table$time)
-# print(full_table[, 1:6])
+print(full_table[, 1:6])
 infection_times <- full_table$time
 likelihood_C <- function(beta) -loglike_C(beta, times = infection_times, T_1 = change_time, T_f=end_time, N = N)
 likelihood_P1 <- get_loglike_prof_1(times=infection_times, T_1=change_time, T_f=end_time, N=N, precision = 0.001)
@@ -107,13 +107,13 @@ b2_plot <- ggplot(dta, aes(x = xs, y = y2s)) +
     ylab('Profile Log-Likelihood')
 
 
-heatmap <- function(times, T1, TF, N){
+heatmap_C <- function(times, T1, TF, N){
   b1 <- seq(0.01, 1, by = 0.01)
   b2 <- seq(0.01, 1, by = 0.01)
   
   LF <- function(b1, b2){
-    beta <- c(b1, b2)
-    loglike_C(beta, times = times, T_1 = T1, T_f=TF, N = N)
+    betas <- c(b1, b2)
+    loglike_C(betas, times = times, T_1 = T1, T_f=TF, N = N)
   } 
   matrix_result <- outer(b1, b2, Vectorize(LF))
   print(matrix_result)
@@ -133,7 +133,12 @@ heatmap <- function(times, T1, TF, N){
   print(p)
 }
 
+<<<<<<< HEAD
 # b1_and_b2_plot <- heatmap(infection_times, change_time, end_time, N)
 
+=======
+# METHOD C
+heatmap_C(infection_times, change_time, end_time, N)
+>>>>>>> 3e86ae863e026f87b73377687256d593e3c0c16e
 
 grid.arrange( b1_plot, b2_plot, nrow = 2)
