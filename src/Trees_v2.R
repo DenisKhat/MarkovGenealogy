@@ -1,8 +1,8 @@
 plot.new()
 
 source("src/MarkhovChain.R")  # copy path from MarkhovChain File
-table <- markhov_virus(end_time=10,beta=0.9=7, gamma=0, S=59, I=1)
-p_0 <- table$infector[2]
+table <- markhov_virus(end_time=10,beta=0.7, gamma=0.5, S=59, I=1)
+p_0 <- table$I_list[1]
 
 end_time = 10
 
@@ -13,7 +13,7 @@ height = 1  # need as global variable as is tracked outside of recursion
 # begin with patient 0 and infection time 0, recovery time == end time, 
 phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
   # get indices of events involving recent id
-  indices <- rev(which(as.numeric(table$infector) == as.numeric(recent))) 
+  indices <- rev(which(as.numeric(unlist(table$infector)) == as.numeric(unlist(recent)))) 
   
   segment_count <- 0  # Initialize segment count for this id
   
@@ -53,5 +53,5 @@ axis(1, at = ticks, labels = labels)
 
 
 # TO DISPLAY:
-# phylog(table, p_0, end_time)
-# print(table[, 1:6])
+print(table[, 1:6])
+phylog(table, p_0, end_time)

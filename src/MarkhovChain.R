@@ -101,8 +101,6 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
 # 
 # table <- markhov_virus(end_time=10,beta=0.1, gamma=0, S=59, I=1, curr_time=5)
 # print(table[, 1:6])
-# p_0 <- as.numeric(table$infector[2])
-# print(p_0)
 
 markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=TRUE){
   # Returns a matrix of probabilities, given time and I.
