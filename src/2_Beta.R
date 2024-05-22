@@ -34,13 +34,25 @@ p_0 <- full_table$I_list[1]
 print(full_table[, 1:6])
 infection_times <- full_table$time
 likelihood_C <- function(beta) -loglike_C(beta, times = infection_times, T_1 = change_time, T_f=end_time, N = N)
+likelihood_P1 <- get_loglike_prof_1(times=infection_times, T_1=change_time, T_f=end_time, N=N, precision = 0.01)
+likelihood_P2 <- get_loglike_prof_2(times=infection_times, T_1=change_time, T_f=end_time, N=N, precision = 0.01)
 # likelihood_C(c(0.1,0.4))
 # likelihood_C(c(0.5, 0.5))
 # print(likelihood_C(c(0.5, 0.5)))
 # print(likelihood_C(c(1, 1)))
+
+# two variable optimization
 betas_hat = optim(c(0.5,0.5), likelihood_C, method = "L-BFGS-B", lower=c(0.01, 0.01), upper=c(0.99, 0.99))
 betas_hat$par
 
+#fix beta1, find max beta 2 (profile likelihood for beta 1)
+beta1_hat = optim(0.5, function(x) -likelihood_P1(x), method = "L-BFGS-B", lower=0.01, upper=0.99)
+beta1_hat$par
+plot(likelihood_P1)
+#fix beta2, find max beta 1 (profile likelihood for beta 2)
+beta2_hat = optim(0.5, function(x) -likelihood_P2(x), method = "L-BFGS-B", lower=0.01, upper=0.99)
+beta2_hat$par
+plot(likelihood_P2)
 
 heatmap_C <- function(times, T1, TF, N){
   b1 <- seq(0.01, 1, by = 0.01)

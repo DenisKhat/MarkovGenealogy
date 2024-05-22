@@ -65,5 +65,33 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
     return(out)
   }
 }
-# loglike_C(betas=c(0.5, 0.5), times=c(0, 0.2, 0.8, 3,  9, 1.2, 3.4, 5.1, 6, 7), T_1 = 5, T_f = 10, N = 60)
 # a <- matrix(0, 10, 10)
+
+get_loglike_prof_1 <- function(times, T_1 = 5, T_f = 10, N = 60, precision=0.05){
+  sampled_points = seq(0+precision, 1, by=precision)
+  # Returns a fitted approx curve of profile likelihood, on domain of 0 to 1. 
+  # Doing nested optim is bad, so this "pre bakes" the function.
+  # Yes, max_at_b1 is just the likelihood function, but using it straight crashes R.
+  max_at_b1 <- function(beta1){
+    LC <- function(beta2){-loglike_C(c(beta1, beta2), times, T_1, T_f, N)}
+    mle <- optim(0.5, LC, method="L-BFGS-B", lower=0.01, upper= 0.99)
+    return(-mle$value)}
+  sampled_maxes = sapply(sampled_points, max_at_b1)
+  return(approxfun(x=sampled_points, y=sampled_maxes, method="linear", rule=1))
+}
+
+
+get_loglike_prof_2 <- function(times, T_1 = 5, T_f = 10, N = 60, precision=0.05){
+  sampled_points = seq(0+precision, 1, by=precision)
+  # Returns a fitted approx curve of profile likelihood, on domain of 0 to 1. 
+  # Doing nested optim is bad, so this "pre bakes" the function.
+  # Yes, max_at_b1 is just the likelihood function, but using it straight crashes R.
+  max_at_b2 <- function(beta2){
+    LC <- function(beta1){-loglike_C(c(beta1, beta2), times, T_1, T_f, N)}
+    mle <- optim(0.5, LC, method="L-BFGS-B", lower=0.01, upper= 0.99)
+    return(-mle$value)}
+  sampled_maxes = sapply(sampled_points, max_at_b2)
+  return(approxfun(x=sampled_points, y=sampled_maxes, method="linear", rule=1))
+}
+
+# loglike_prof_1(beta1=0.01, times=c(0, 0.2, 0.8, 3,  9, 1.2, 3.4, 5.1, 6, 7), T_1 = 5, T_f = 10, N = 60)
