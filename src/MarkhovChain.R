@@ -18,7 +18,7 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
     I_list <- I_list
   }
   if (is.null(S_list)){
-    S_list <- list(setdiff(1:S, I_list[[1]]))
+    S_list <- list(setdiff(1:N, I_list[[1]]))
   }
   else{
     S_list <- S_list
@@ -91,16 +91,16 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
     R_list <- list(R_list)
     table <- rbind(table, c(current_time, infecter, affected, S, I, R, S_list, I_list, R_list))
   }
-  if (current_time > end_time) table <- table[-nrow(table), ]
   table <- data.frame(table)
+  if (current_time > end_time){
+    table <- head(table, -1)
+  }
   table$time <- as.numeric(table$time)
   return(table)
 }
 # 
-# table <- markhov_virus(end_time=10,beta=0.7, gamma=0, S=59, I=1, curr_time=5)
+# table <- markhov_virus(end_time=10,beta=0.1, gamma=0, S=59, I=1, curr_time=5)
 # print(table[, 1:6])
-# p_0 <- as.numeric(table$infector[2])
-# print(p_0)
 
 markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=TRUE){
   # Returns a matrix of probabilities, given time and I.

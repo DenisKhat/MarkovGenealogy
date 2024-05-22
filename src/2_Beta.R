@@ -53,3 +53,32 @@ plot(likelihood_P1)
 beta2_hat = optim(0.5, function(x) -likelihood_P2(x), method = "L-BFGS-B", lower=0.01, upper=0.99)
 beta2_hat$par
 plot(likelihood_P2)
+
+heatmap <- function(times, T1, TF, N){
+  b1 <- seq(0.01, 1, by = 0.01)
+  b2 <- seq(0.01, 1, by = 0.01)
+  
+  LF <- function(b1, b2){
+    beta <- c(b1, b2)
+    loglike_C(beta, times = times, T_1 = T1, T_f=TF, N = N)
+  } 
+  matrix_result <- outer(b1, b2, Vectorize(LF))
+  print(matrix_result)
+  
+  # NORMALIZE
+  # min_val <- min(matrix_result)
+  # max_val <- max(matrix_result)
+  # normalized_result <- (matrix_result - min_val) / (max_val - min_val)
+  
+  data <- expand.grid(b1 = b1, b2 = b2)
+  # data$Z <- as.vector(normalized_result)
+  data$Z <- as.vector(matrix_result)
+
+  p <- ggplot(data, aes(b1, b2, fill= Z)) +
+    geom_tile()+
+    scale_fill_gradient(low="blue", high="red")
+  print(p)
+}
+
+heatmap(infection_times, change_time, end_time, N)
+
