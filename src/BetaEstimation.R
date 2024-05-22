@@ -47,8 +47,8 @@ get_MLE <- function(func, alpha){
   # roots <- uniroot.all(f=function(x) -func(x) - wilks_cutoff, interval = c(0,1), n=2)
   lower_wilks = uniroot(curve, lower = 0, upper=mle)$root
   upper_wilks = uniroot(curve, lower = mle, upper = 10)$root
-  # lower = uniroot(curve, lower = 0, upper=mle)$root
-  # upper = uniroot(curve, lower = mle, upper = 10)$root
+  lower = uniroot(curve, lower = 0, upper=mle)$root
+  upper = uniroot(curve, lower = mle, upper = 10)$root
   return(list(mle, lower, upper, lower_wilks, upper_wilks))
 }
 

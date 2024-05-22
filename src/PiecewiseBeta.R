@@ -67,6 +67,7 @@ loglike_C <- function(betas, times, T_1 = 5, T_f = 10, N = 60){
 }
 # a <- matrix(0, 10, 10)
 
+
 get_loglike_prof_1 <- function(times, T_1 = 5, T_f = 10, N = 60, precision=0.05){
   sampled_points = seq(0+precision, 1, by=precision)
   # Returns a fitted approx curve of profile likelihood, on domain of 0 to 1. 
