@@ -47,10 +47,10 @@ betas_hat = optim(c(0.5,0.5), likelihood_C, method = "L-BFGS-B", lower=c(0.01, 0
 betas_hat$par
 
 #fix beta1, find max beta 2 (profile likelihood for beta 1)
-beta1_hat = optim(0.5, function(x) -likelihood_P1(x), method = "L-BFGS-B", lower=0.001, upper=0.99)
+beta1_hat = optim(0.5, function(x) -likelihood_P1(x), method = "L-BFGS-B", lower=0.005, upper=0.99)
 beta1_hat$par
 #fix beta2, find max beta 1 (profile likelihood for beta 2)
-beta2_hat = optim(0.5, function(x) -likelihood_P2(x), method = "L-BFGS-B", lower=0.001, upper=0.99)
+beta2_hat = optim(0.5, function(x) -likelihood_P2(x), method = "L-BFGS-B", lower=0.005, upper=0.99)
 beta2_hat$par
 
 chi <- qchisq(p = 0.95, df = 1)/2
@@ -62,13 +62,17 @@ shifted_L2 <- function(x) likelihood_P2(x) + beta2_hat$value + chi
 
 # confidence interval b1 (Wilks' estimate)
 upper_b1 <- 1
-lower_b1 <- uniroot(shifted_L1, lower = 0.001, upper=beta1_hat$par)$root
+lower_b1 <- 0
+if (shifted_L1(0.01) < 0){
+lower_b1 <- uniroot(shifted_L1, lower = 0.001, upper=beta1_hat$par)$root }
 if (shifted_L1(1) <= 0){
   upper_b1 = uniroot(shifted_L1, lower = beta1_hat$par, upper = 0.99)$root }
 
 #confidence interval b2 (Wilks' estimate)
 upper_b2 <- 1
-lower_b2 = uniroot(shifted_L2, lower = 0.001, upper=beta2_hat$par)$root
+lower_b2 <- 0
+if (shifted_L2(0.01) < 0){
+  lower_b2 = uniroot(shifted_L2, lower = 0.001, upper=beta2_hat$par)$root}
 if (shifted_L2(1) <= 0){
   upper_b2 = uniroot(shifted_L2, lower = beta2_hat$par, upper = 0.99)$root
 }
