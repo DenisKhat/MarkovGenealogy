@@ -44,11 +44,12 @@ phylog <- function(table, recent, end_time, time_of_infection = 0, counter = 0){
   return(segment_count)
 }
 
+
 # draw axis and set plot
-ticks <- seq(0, end_time, by = 1)
-labels <- as.character(ticks)
-plot(1, type = "n", xlim = c(0, end_time + 0.1), ylim = c(0, 1), xlab = "Time", ylab = "", axes = FALSE)
-axis(1, at = ticks, labels = labels)
+# ticks <- seq(0, end_time, by = 1)
+# labels <- as.character(ticks)
+# plot(1, type = "n", xlim = c(0, end_time + 0.1), ylim = c(0, 1), xlab = "Time", ylab = "", axes = FALSE)
+# axis(1, at = ticks, labels = labels)
 
 
 
