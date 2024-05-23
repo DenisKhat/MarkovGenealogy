@@ -14,10 +14,7 @@ T_1: 5        # When the change of beta happens
 T_f: 10       # The time we stop sampling events
 sim_stop: 10  # The time at which we stop the underlying simulation. 
 #--- Population parameters
-<<<<<<< HEAD
-=======
 
->>>>>>> 8250b4b446e71602eb67624d50ca37c69c491949
 num: 60         # Effective population size
 I: 1          # Initial number of infected at "time 0"
 
