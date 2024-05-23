@@ -9,7 +9,9 @@ T_1: 5        # When the change of beta happens
 T_f: 10       # The time we stop sampling events
 
 #--- Population parameters
-N: 60         # Effective population size
+num: 60         # Effective population size
 I: 1          # Initial number of infected at "time 0"
+
+ncores: 100
 
 # We will be using an SI model, so S infered from N-I, and R is not relevant.
