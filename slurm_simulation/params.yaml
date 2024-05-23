@@ -2,14 +2,20 @@
 # so we can make them more self contained, and reuse the same parameters for 
 # different methods.
 
+#--- One rate Virus Paramters
+beta: 0.5
+
 #--- Changed Rate Virus Parameters
 beta1: 0.6    # The rate of infeciton before the change
 beta2: 0.3    # The rate of infection after the change
 T_1: 5        # When the change of beta happens
-T_f: 10       # The time we stop sampling events
 
+#--- Global Virus Parameters
+T_f: 10       # The time we stop sampling events
+sim_stop: 10  # The time at which we stop the underlying simulation. 
 #--- Population parameters
-N: 60         # Effective population size
+
+num: 60         # Effective population size
 I: 1          # Initial number of infected at "time 0"
 
 # We will be using an SI model, so S infered from N-I, and R is not relevant.
