@@ -18,4 +18,6 @@ sim_stop: 10  # The time at which we stop the underlying simulation.
 num: 60         # Effective population size
 I: 1          # Initial number of infected at "time 0"
 
+ncores: 100
+
 # We will be using an SI model, so S infered from N-I, and R is not relevant.
