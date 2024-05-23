@@ -1,4 +1,5 @@
-library(yaml)
+library(yaml)     # Uncomment when local
+# library(yaml, lib.loc = "../packages")  # Uncomment when on slurm
 
 params = read_yaml("slurm_simulation/params.yaml")  # Uncomment when local
 # params = read_yaml("/params.yaml")  # Uncomment when on slurm

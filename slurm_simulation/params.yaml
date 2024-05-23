@@ -15,9 +15,10 @@ T_f: 10       # The time we stop sampling events
 sim_stop: 10  # The time at which we stop the underlying simulation. 
 #--- Population parameters
 
-num: 60         # Effective population size
+num: 60       # Effective population size
 I: 1          # Initial number of infected at "time 0"
 
-ncores: 100
+ncores: 100   # Number of cores we use for simulation
+nsim: 1000    # Number of simulations (total) to run.
 
 # We will be using an SI model, so S infered from N-I, and R is not relevant.
