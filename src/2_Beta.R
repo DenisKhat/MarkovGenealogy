@@ -6,8 +6,8 @@ library(gridExtra)
 height = 1
 
 N = 60
-b1 = 0.3
-b2 = 0.6
+b1 = 0.6
+b2 = 0.3
 gamma = 0
 change_time = 5
 end_time = 10
@@ -133,12 +133,9 @@ heatmap_C <- function(times, T1, TF, N){
   print(p)
 }
 
-<<<<<<< HEAD
 # b1_and_b2_plot <- heatmap(infection_times, change_time, end_time, N)
 
-=======
 # METHOD C
-heatmap_C(infection_times, change_time, end_time, N)
->>>>>>> 3e86ae863e026f87b73377687256d593e3c0c16e
+# heatmap_C(infection_times, change_time, end_time, N)
 
 grid.arrange( b1_plot, b2_plot, nrow = 2)
