@@ -1,6 +1,7 @@
 library(yaml)
 
-params = read_yaml("slurm_simulation/params.yaml")
+params = read_yaml("slurm_simulation/params.yaml")  # Uncomment when local
+# params = read_yaml("/params.yaml")  # Uncomment when on slurm
 N <- params$num
 
 markov_virus <- function(beta, I=params$I, t=0, end_t=params$T_f){ #SI model
