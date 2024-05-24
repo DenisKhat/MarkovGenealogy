@@ -102,10 +102,10 @@ markhov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_lis
 # table <- markhov_virus(end_time=10,beta=0.1, gamma=0, S=59, I=1, curr_time=5)
 # print(table[, 1:6])
 
-markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=TRUE){
-  # Returns a matrix of probabilities, given time and I.
+markhov_probability <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=FALSE){
+  # Returns a matrix of probabilities, given some times, for all I.
   # output in form of matrix[time, I_value]
-  #temporarily for this function, assume recovery back into susceptible, may change that later.
+  # immunity=true uses SIR, immunity=false uses SIS. SIR is nonsense right now.
   N <- initial_S + initial_I + initial_R
   # Code for diff. eqtn solving
   lambda <- sapply(seq(0, N), function(i) beta * (N-i) * i / N)
