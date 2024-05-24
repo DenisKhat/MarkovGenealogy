@@ -21,11 +21,11 @@ df = as.data.frame(do.call(cbind, combined))
 # print(df)
 
 I_at_t <- function(data, time){
-  index <- which(table$time == time)  # get index of desired time
+  index <- which(data()$time == time)  # get index of desired time
   if (length(index) == 0){ # if no event at exact time
-    index <- which(table$time == closest_lower(time, table$time)) # look at closest earlier event
+    index <- which(data$time == closest_lower(time, data$time)) # look at closest earlier event
   }
-  I <- as.numeric(table$I[index])
+  I <- as.numeric(data$I[index])
   return(I)
 }
 

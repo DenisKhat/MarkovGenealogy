@@ -1,30 +1,29 @@
-library(yaml)
 
 rm(list=ls())
 
-source('src/MarkhovChain.R')
-# library(deSolve, lib.loc = "/global/home/hpc5441/packages")
-# library(Matrix, lib.loc = "/global/home/hpc5441/packages")
+source('virusSimulation.R')
+library(deSolve, lib.loc = "../packages")
+library(Matrix, lib.loc = "../packages")
+library(yaml, lib.loc = "../packages")
 
-params <- read_yaml("slurm_simulation/params.yaml")
-# source("slurm_simulation/simulation.R")  # source simulations
+beta = 0.5
 
 # set up cluster
 args <- commandArgs(TRUE)
-job_id <- as.numeric(args[1])
+# job_id <- as.numeric(args[1])
 job_id <- 2
 dir <- getwd()
 
-num_of_sims <- 100
+num_of_sims <- 50
 ncores <- params$ncores  # will be from sim file
 
 # helper functions
 I_at_t <- function(data, time){
-  index <- which(table$time == time)  # get index of desired time
+  index <- which(data$time == time)  # get index of desired time
   if (length(index) == 0){ # if no event at exact time
-    index <- which(table$time == closest_lower(time, table$time)) # look at closest earlier event
+    index <- which(data$time == closest_lower(time, data$time)) # look at closest earlier event
   }
-  I <- as.numeric(table$I[index])
+  I <- as.numeric(data$I[index])
   return(I)
 }
 
@@ -45,43 +44,34 @@ get_MLE <- function(func, alpha){
   x_points <- seq(0, 10, by=0.01)
   y_points <- sapply(x_points, function(x) -func(x) - wilks_cutoff)
   curve <- approxfun(x_points, y_points)
+  inCI = 0
+  #if error
+  if (curve(0) > 0 || curve(10) > 0){
+    inCI = 2
+  }
+  else{
+    lower_wilks = uniroot(curve, lower = 0, upper=mle)$root
+    upper_wilks = uniroot(curve, lower = mle, upper = 10)$root
+    #if in CI
+    if (mle[1] > lower_wilks && mle[1] < upper_wilks){
+      inCI = 1
+    } else{
+      inCI = 0
+    }
+  }
+  return(list(mle, inCI))
+  
   # plot(curve)
   # roots <- uniroot.all(f=function(x) -func(x) - wilks_cutoff, interval = c(0,1), n=2)
-  lower_wilks = uniroot(curve, lower = 0, upper=mle)$root
-  upper_wilks = uniroot(curve, lower = mle, upper = 10)$root
+
   # lower = uniroot(curve, lower = 0, upper=mle)$root
   # upper = uniroot(curve, lower = mle, upper = 10)$root
-  return(list(mle, lower_wilks, upper_wilks))
 }
 
 # vars
-N <-params$Num  # will be from sim file
-I <- params$I   # will be from sim file
-end_time <- 10
-beta <- 0.7
-gamma <- 0
-
-table <- markhov_virus(end_time, beta, gamma, 59, I, 0)
-sampled_times=c(5, 10)
-
-times <- table$time
-sampled_I <- c()
-
-for (i in sampled_times){
-  index <- which(table$time == i) # get index of desired time
-  
-  if (length(index) == 0){ # if no event at exact time
-    index <- which(table$time == closest_lower(i, table$time)) # look at closest earlier event
-  }
-  # get the number of infected at time
-  num_of_inf <- as.numeric(table$I[index])
-  
-  sampled_I <- c(sampled_I, num_of_inf)
-}
-#data frame fit for method b
-#times, I
-dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
-
+# I <- params$I   # will be from sim file
+# end_time <- 10
+# gamma <- 0
 
 methodB <- function(data, N){  # METHODS A AND B
   x <- seq(0, 10, by = 0.01)
@@ -104,9 +94,6 @@ methodB <- function(data, N){  # METHODS A AND B
   }
   
   mle <- get_MLE(function(x) -LB(x), 0.05)
-  max <- mle[[1]]
-  lower <- mle[[2]]
-  upper <- mle[[3]]
   
   return(mle)
 }
@@ -115,16 +102,46 @@ results <- data.frame()
 results <- results[((job_id-1)*num_of_sims+1):(job_id*num_of_sims),]
 results$estimate <- 0
 results$inCI <- 0
-print(results)
+row.names(results) <- NULL
+# print(results)
 
 for (i in 1:num_of_sims){
-  mle <- methodB(dfb, N)
-  estimate <- mle[1]
-  results$estimate[i] <- estimate
-  if (mle[2] < estimate < mle[3]){
-    results$inCI[i] <- 1
+  table <- markov_virus(beta)
+  sampled_times=c(5, 10)
+  
+  times <- table$time
+  sampled_I <- c()
+  
+  for (j in sampled_times){
+    index <- which(table$time == j) # get index of desired time
+    
+    if (length(index) == 0){ # if no event at exact time
+      index <- which(table$time == closest_lower(j, table$time)) # look at closest earlier event
+    }
+    # get the number of infected at time
+    num_of_inf <- as.numeric(table$I[index])
+    
+    sampled_I <- c(sampled_I, num_of_inf)
   }
+  #data frame fit for method b
+  #times, I
+  dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
+  # print(dfb)
+  mle <- methodB(dfb, N)
+  mle <- as.numeric(mle)
+  estimate <- mle[1]
+  inCI <- mle [2]
+  results$estimate[i] <- estimate
+  results$inCI[i] <- inCI
 }
   
+print(results)
+path <- file.path(dir,"Results")
+if (!file.exists(path)) {
+  dir.create(path)
+}
+setwd(path)
+write.csv(results,file=paste0("MethodB",job_id,".csv"),row.names=FALSE)
+setwd(dir)
   
   
