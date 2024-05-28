@@ -1,4 +1,3 @@
-
 rm(list=ls())
 
 source('virusSimulation.R')
@@ -10,12 +9,14 @@ beta = 0.5
 
 # set up cluster
 args <- commandArgs(TRUE)
-# job_id <- as.numeric(args[1])
-job_id <- 2
+job_id <- as.numeric(args[1])
+# job_id <- 2
 dir <- getwd()
 
-num_of_sims <- 50
+num_of_sims <- params$nsim
 ncores <- params$ncores  # will be from sim file
+
+m <- ceiling(num_of_sims / ncores)
 
 # helper functions
 I_at_t <- function(data, time){
@@ -32,7 +33,7 @@ closest_lower <- function(target, numbers) {
 }
 
 get_MLE <- function(func, alpha){
-  MLE <- optim(0.5, func, method = "L-BFGS-B", lower = 0.2, upper= 0.8, hessian = TRUE)
+  MLE <- optim(0.5, func, method = "L-BFGS-B", lower = 0.01, upper= 1, hessian = TRUE)
   
   mle <- MLE$par
   var <- solve(MLE$hessian[[1,1]])
@@ -63,7 +64,7 @@ get_MLE <- function(func, alpha){
   
   # plot(curve)
   # roots <- uniroot.all(f=function(x) -func(x) - wilks_cutoff, interval = c(0,1), n=2)
-
+  
   # lower = uniroot(curve, lower = 0, upper=mle)$root
   # upper = uniroot(curve, lower = mle, upper = 10)$root
 }
@@ -80,10 +81,10 @@ methodB <- function(data, N){  # METHODS A AND B
   data <- data[order(data$times),]
   row.names(data) <- NULL
   LB <- function(beta){
-    val = log(markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] + 1 ])
+    val = log(markov_probability(data[[1,1]], beta, 0, N, 1)[ data[[1,2]] + 1 ])
     if (length(data) > 2){
       for (i in 2:nrow(data)){
-        val = val + log(markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]])
+        val = val + log(markov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N, data[[i-1,2]])[[data[[i,2]] + 1 ]])
       }
     }
     return(val)
@@ -98,14 +99,17 @@ methodB <- function(data, N){  # METHODS A AND B
   return(mle)
 }
 
-results <- data.frame()
-results <- results[((job_id-1)*num_of_sims+1):(job_id*num_of_sims),]
-results$estimate <- 0
-results$inCI <- 0
-row.names(results) <- NULL
+# results <- data.frame()
+# results <- results[((job_id-1)*m+1):min(job_id*m, num_of_sims),]
+# results$estimate <- 0
+# results$inCI <- 0
+# row.names(results) <- NULL
 # print(results)
 
-for (i in 1:num_of_sims){
+estimate <- c()
+inCI <- c()
+
+for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
   table <- markov_virus(beta)
   sampled_times=c(5, 10)
   
@@ -129,19 +133,21 @@ for (i in 1:num_of_sims){
   # print(dfb)
   mle <- methodB(dfb, N)
   mle <- as.numeric(mle)
-  estimate <- mle[1]
-  inCI <- mle [2]
-  results$estimate[i] <- estimate
-  results$inCI[i] <- inCI
-}
+  estimate <- c(estimate, mle[1])
+  inCI <- c(inCI, mle [2])
   
-print(results)
+  # results$estimate[i] <- estimate
+  # results$inCI[i] <- inCI
+}
+
+# print(results)
 path <- file.path(dir,"Results")
 if (!file.exists(path)) {
   dir.create(path)
 }
+
+output_table <- data.frame(estimate, inCI)
 setwd(path)
-write.csv(results,file=paste0("MethodB",job_id,".csv"),row.names=FALSE)
+write.csv(output_table,file=paste0("MethodB",job_id,".csv"),row.names=FALSE)
 setwd(dir)
-  
-  
+
