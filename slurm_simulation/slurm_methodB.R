@@ -46,9 +46,10 @@ get_MLE <- function(func, alpha){
   y_points <- sapply(x_points, function(x) -func(x) - wilks_cutoff)
   curve <- approxfun(x_points, y_points)
   inCI = 0
+  width = NA
   #if error
   if (curve(0) > 0 || curve(10) > 0){
-    inCI = 2
+    inCI = NA
   }
   else{
     lower_wilks = uniroot(curve, lower = 0, upper=mle)$root
@@ -56,11 +57,13 @@ get_MLE <- function(func, alpha){
     #if in CI
     if (mle[1] > lower_wilks && mle[1] < upper_wilks){
       inCI = 1
+      width = upper_wilks - lower_wilks
     } else{
       inCI = 0
+      width = upper_wilks - lower_wilks
     }
   }
-  return(list(mle, inCI))
+  return(list(mle, inCI, width))
   
   # plot(curve)
   # roots <- uniroot.all(f=function(x) -func(x) - wilks_cutoff, interval = c(0,1), n=2)
@@ -106,24 +109,32 @@ methodB <- function(data, N){  # METHODS A AND B
 # row.names(results) <- NULL
 # print(results)
 
+id <- c()
 estimate <- c()
 inCI <- c()
+width <- c()
+table <- read.csv("simulation1beta.csv")
+
 
 for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
-  table <- markov_virus(beta)
+  if (length(table$id == i) == 0){
+    next
+  }
+  
+  sim_table <- table[table$id == i, c("time", "I")]
   sampled_times=c(5, 10)
   
-  times <- table$time
+  times <- sim_table$time
   sampled_I <- c()
   
   for (j in sampled_times){
-    index <- which(table$time == j) # get index of desired time
+    index <- which(sim_table$time == j) # get index of desired time
     
     if (length(index) == 0){ # if no event at exact time
-      index <- which(table$time == closest_lower(j, table$time)) # look at closest earlier event
+      index <- which(sim_table$time == closest_lower(j, sim_table$time)) # look at closest earlier event
     }
     # get the number of infected at time
-    num_of_inf <- as.numeric(table$I[index])
+    num_of_inf <- as.numeric(sim_table$I[index])
     
     sampled_I <- c(sampled_I, num_of_inf)
   }
@@ -133,8 +144,15 @@ for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
   # print(dfb)
   mle <- methodB(dfb, N)
   mle <- as.numeric(mle)
+  if (mle[1] == 0.01){
+    mle[1] = 0
+  }
+  id <- c(id, i)
   estimate <- c(estimate, mle[1])
   inCI <- c(inCI, mle [2])
+  width <- c(width, mle[3])
+  
+  
   
   # results$estimate[i] <- estimate
   # results$inCI[i] <- inCI
@@ -146,7 +164,7 @@ if (!file.exists(path)) {
   dir.create(path)
 }
 
-output_table <- data.frame(estimate, inCI)
+output_table <- data.frame(id, estimate, inCI, width)
 setwd(path)
 write.csv(output_table,file=paste0("MethodB",job_id,".csv"),row.names=FALSE)
 setwd(dir)
