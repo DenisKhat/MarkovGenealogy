@@ -5,7 +5,7 @@ CI <- mean(methodB_df$inCI, na.rm = TRUE)
 width <- mean(methodB_df$width, na.rm = TRUE)
 tot_length <- length(methodB_df[,1])
 sims_wout_outliers <- methodB_df[!is.na(methodB_df$inCI), ]
-length_sims_wout_outliers <- length(sims_w_events[,1])
+length_sims_wout_outliers <- length(sims_wout_outliers[,1])
 
 
 paste("avg estimate:", estimate)

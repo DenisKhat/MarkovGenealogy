@@ -4,8 +4,8 @@ source('src/Trees_v2.R')
 source('src/PiecewiseBeta.R')
 
 N = 60
-b1 = 0.7
-b2 = 0.1
+b1 = 0.6
+b2 = 0.3
 gamma = 0
 change_time = 5
 end_time = 10
@@ -98,3 +98,68 @@ heatmap_B(dfb, T1, TF, N)
 likelihood_B <- function(beta) -loglike_B(beta, dfb, T1, TF, N)
 betas_hat = optim(c(0.5,0.5), likelihood_B, method = "L-BFGS-B", lower=c(0.01, 0.01), upper=c(0.99, 0.99))
 betas_hat$par
+
+get_loglike_prof_1B <- function(data, T_1 = 5, T_f = 10, N = 60, precision=0.05){
+  sampled_points = seq(0+precision, 1, by=precision)
+  # Returns a fitted approx curve of profile likelihood, on domain of 0 to 1. 
+  # Doing nested optim is bad, so this "pre bakes" the function.
+  # Yes, max_at_b1 is just the likelihood function, but using it straight crashes R.
+  max_at_b1 <- function(beta1){
+    LB <- function(beta2){-loglike_B(c(beta1, beta2), data, T_1, T_f, N)}
+    mle <- optim(0.5, LB, method="L-BFGS-B", lower=0.01, upper= 0.99)
+    return(-mle$value)}
+  sampled_maxes = sapply(sampled_points, max_at_b1)
+  return(approxfun(x=sampled_points, y=sampled_maxes, method="linear", rule=1))
+}
+
+
+get_loglike_prof_2B <- function(data, T_1 = 5, T_f = 10, N = 60, precision=0.05){
+  sampled_points = seq(0+precision, 1, by=precision)
+  # Returns a fitted approx curve of profile likelihood, on domain of 0 to 1. 
+  # Doing nested optim is bad, so this "pre bakes" the function.
+  # Yes, max_at_b1 is just the likelihood function, but using it straight crashes R.
+  max_at_b2 <- function(beta2){
+    LB <- function(beta1){-loglike_B(c(beta1, beta2), data, T_1, T_f, N)}
+    mle <- optim(0.5, LB, method="L-BFGS-B", lower=0.01, upper= 0.99)
+    return(-mle$value)}
+  sampled_maxes = sapply(sampled_points, max_at_b2)
+  return(approxfun(x=sampled_points, y=sampled_maxes, method="linear", rule=1))
+}
+
+likelihood_P1 <- get_loglike_prof_1B(data = dfb, T_1=change_time, T_f=end_time, N=N, precision = 0.001)
+likelihood_P2 <- get_loglike_prof_2B(data = dfb, T_1=change_time, T_f=end_time, N=N, precision = 0.001)
+
+#fix beta1, find max beta 2 (profile likelihood for beta 1)
+beta1_hat = optim(0.5, function(x) -likelihood_P1(x), method = "L-BFGS-B", lower=0.005, upper=0.99)
+beta1_hat$par
+
+beta2_hat = optim(0.5, function(x) -likelihood_P2(x), method = "L-BFGS-B", lower=0.005, upper=0.99)
+beta2_hat$par
+
+chi <- qchisq(p = 0.95, df = 1)/2
+shifted_L1 <- function(x) likelihood_P1(x) + beta1_hat$value + chi
+shifted_L2 <- function(x) likelihood_P2(x) + beta2_hat$value + chi
+
+# confidence interval b1 (Wilks' estimate)
+upper_b1 <- 1
+lower_b1 <- 0
+if (shifted_L1(0.01) < 0){
+  lower_b1 <- uniroot(shifted_L1, lower = 0.001, upper=beta1_hat$par)$root }
+if (shifted_L1(1) <= 0){
+  upper_b1 = uniroot(shifted_L1, lower = beta1_hat$par, upper = 0.99)$root }
+
+#confidence interval b2 (Wilks' estimate)
+upper_b2 <- 1
+lower_b2 <- 0
+if (shifted_L2(0.01) < 0){
+  lower_b2 = uniroot(shifted_L2, lower = 0.001, upper=beta2_hat$par)$root}
+if (shifted_L2(1) <= 0){
+  upper_b2 = uniroot(shifted_L2, lower = beta2_hat$par, upper = 0.99)$root
+}
+
+
+print(lower_b1)
+print(upper_b1)
+
+print(lower_b2)
+print(upper_b2)
