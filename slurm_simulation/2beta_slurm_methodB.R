@@ -178,6 +178,7 @@ for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
   likelihood_B <- function(beta) -loglike_B(beta, dfb, T1, TF, N)
   
   betas_hat = optim(c(0.5,0.5), likelihood_B, method = "L-BFGS-B", lower=c(0.01, 0.01), upper=c(0.99, 0.99))
+  betas_hat <- betas_hat$par
   b1_estimate <- c(b1_estimate, betas_hat[1])
   b2_estimate <- c(b2_estimate, betas_hat[2])
   
