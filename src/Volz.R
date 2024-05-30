@@ -72,6 +72,6 @@ volz <- function(beta) -Volz_likelihood(beta)
 
 mle <- optim(0.5, volz, method="L-BFGS-B", lower=0.01, upper= 1)
 
-print(mle)
+print(mle$par)
 
 
