@@ -14,7 +14,7 @@ beta2 = 0.3
 # set up cluster
 args <- commandArgs(TRUE)
 job_id <- as.numeric(args[1])
-# job_id <- 1
+# job_id <- 2
 dir <- getwd()
 
 num_of_sims <- params$nsim
@@ -79,31 +79,30 @@ get_loglike_prof_2B <- function(data, T_1 = 5, T_f = 10, N = 60, precision=0.05)
 conf_interval <- function(betahat, data, T1, T2, N){
   chi <- qchisq(p = 0.95, df = 1)/2
   
-  likelihood_P1 <- get_loglike_prof_1B(data, T1, T2, N=N, precision = 0.001)
-  likelihood_P2 <- get_loglike_prof_2B(data, T1, T2, N=N, precision = 0.001)
+  likelihood_P1 <- get_loglike_prof_1B(data, T1, T2, N=N, precision = 0.05)
+  likelihood_P2 <- get_loglike_prof_2B(data, T1, T2, N=N, precision = 0.05)
   
   #fix beta1, find max beta 2 (profile likelihood for beta 1)
-  beta1_hat = betahat[1]
+  beta1_hat = betahat$par[1]
   
-  beta2_hat = betahat[2]
+  beta2_hat = betahat$par[2]
   
-  shifted_L1 <- function(x) likelihood_P1(x) + beta1_hat + chi
-  shifted_L2 <- function(x) likelihood_P2(x) + beta2_hat + chi
+  shifted_L1 <- function(x) likelihood_P1(x) + betahat$value + chi
+  shifted_L2 <- function(x) likelihood_P2(x) + betahat$value + chi
   
   b1_inCI = NA
   b2_inCI = NA
   b1_CI_width = NA
   b2_CI_width = NA
   
-  if (shifted_L1(0.01) > 0 || shifted_L1(1) > 0){
+  if (shifted_L1(0.05) > 0 || shifted_L1(0.99) > 0){
     b1_inCI = NA
     b1_CI_width = NA
-  }
-  else{
+  }else{
     # confidence interval b1 (Wilks' estimate)
     upper_b1 <- 1
     lower_b1 <- 0
-    lower_b1 <- uniroot(shifted_L1, lower = 0.001, upper=beta1_hat)$root 
+    lower_b1 <- uniroot(shifted_L1, lower = 0.05, upper=beta1_hat)$root 
     upper_b1 = uniroot(shifted_L1, lower = beta1_hat, upper = 0.99)$root
     
     if (beta1_hat > lower_b1  && beta1_hat < upper_b1){
@@ -114,14 +113,14 @@ conf_interval <- function(betahat, data, T1, T2, N){
     b1_CI_width = upper_b1 - lower_b1
   }
   
-  if (shifted_L2(0.01) > 0 || shifted_L2(1) > 0){
+  if (shifted_L2(0.05) > 0 || shifted_L2(0.99) > 0){
     b2_inCI = NA
     b2_CI_width = NA
   }else{
     #confidence interval b2 (Wilks' estimate)
     upper_b2 <- 1
     lower_b2 <- 0
-    lower_b2 = uniroot(shifted_L2, lower = 0.001, upper=beta2_hat)$root
+    lower_b2 = uniroot(shifted_L2, lower = 0.05, upper=beta2_hat)$root
     upper_b2 = uniroot(shifted_L2, lower = beta2_hat, upper = 0.99)$root
     
     if (beta2_hat > lower_b2  && beta2_hat < upper_b2){
@@ -139,10 +138,10 @@ conf_interval <- function(betahat, data, T1, T2, N){
 id <- c()
 b1_estimate <- c()
 b2_estimate <- c()
-b1_inCI <- c()
-b2_inCI <- c()
-b1_CI_width <- c()
-b2_CI_width <- c()
+b1_inCI_col <- c()
+b2_inCI_col <- c()
+b1_CI_width_col <- c()
+b2_CI_width_col <- c()
 table <- read.csv("simulation2beta.csv")
 
 for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
@@ -178,17 +177,26 @@ for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
   likelihood_B <- function(beta) -loglike_B(beta, dfb, T1, TF, N)
   
   betas_hat = optim(c(0.5,0.5), likelihood_B, method = "L-BFGS-B", lower=c(0.01, 0.01), upper=c(0.99, 0.99))
-  betas_hat <- betas_hat$par
-  b1_estimate <- c(b1_estimate, betas_hat[1])
-  b2_estimate <- c(b2_estimate, betas_hat[2])
+  print(betas_hat$par[1]) 
+  print(betas_hat$par[2]) 
+
+  b1_estimate <- c(b1_estimate, betas_hat$par[1])
+
+  b2_estimate <- c(b2_estimate, betas_hat$par[2])
   
   CI <- conf_interval(betas_hat, dfb, sampled_times[1], sampled_times[2], N)
+  print(CI)
+  print(as.numeric(CI[1]))
+  print(as.numeric(CI[2]))
+  print(as.numeric(CI[3]))
+  print(as.numeric(CI[4]))
+
+
+  b1_inCI_col <- c(b1_inCI_col, as.numeric(CI[1]))
+  b1_CI_width_col <- c(b1_CI_width_col, as.numeric(CI[2]))
   
-  b1_inCI <- c(b1_inCI, CI[1])
-  b1_CI_width <- c(b1_CI_width, CI[2])
-  
-  b2_inCI <- c(b2_inCI, CI[3])
-  b2_CI_width <- c(b2_CI_width, CI[4])
+  b2_inCI_col <- c(b2_inCI_col, as.numeric(CI[3]))
+  b2_CI_width_col <- c(b2_CI_width_col, as.numeric(CI[4]))
 }
 
 path <- file.path(dir,"Results")
@@ -196,7 +204,7 @@ if (!file.exists(path)) {
   dir.create(path)
 }
 
-output_table <- data.frame(b1_estimate, b1_inCI, b1_CI_width, b2_estimate, b2_inCI, b2_CI_width)
+output_table <- data.frame(id, b1_estimate, b1_inCI_col, b1_CI_width_col, b2_estimate, b2_inCI_col, b2_CI_width_col)
 setwd(path)
 write.csv(output_table,file=paste0("2betaMethodB",job_id,".csv"),row.names=FALSE)
 setwd(dir)

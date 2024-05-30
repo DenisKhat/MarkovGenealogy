@@ -149,7 +149,7 @@ for (i in ((job_id-1)*m+1):min(job_id*m, num_of_sims)){
   }
   id <- c(id, i)
   estimate <- c(estimate, mle[1])
-  inCI <- c(inCI, mle [2])
+  inCI <- c(inCI, mle[2])
   width <- c(width, mle[3])
   
   
