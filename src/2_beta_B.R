@@ -88,13 +88,19 @@ heatmap_B <- function(data, T1, TF, N){
   # max_val <- max(matrix_result)
   # normalized_result <- (matrix_result - min_val) / (max_val - min_val)
   
+  z_values <- as.vector(matrix_result)
+  z_median <- median(z_values)
+  
+  
   data <- expand.grid(b1 = b1, b2 = b2)
   # data$Z <- as.vector(normalized_result)
   data$Z <- as.vector(matrix_result)
   
-  p <- ggplot(data, aes(b1, b2, fill= Z)) +
+  data_filtered <- subset(data, Z >= z_median)
+  
+  p <- ggplot(data_filtered, aes(b1, b2, fill= Z)) +
     geom_tile()+
-    scale_fill_gradient(low="blue", high="yellow", limits = c(-25, 0))+
+    scale_fill_gradient(low="blue", high="yellow")+
     geom_point(aes(x = betas_hat$par[1], y = betas_hat$par[2]), color = "black", size = 3)
   print(p)
 }
