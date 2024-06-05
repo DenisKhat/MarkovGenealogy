@@ -1,0 +1,12 @@
+# Volz Investigation
+```{r}
+source("MarkhovChain.R")
+library("tidyverse")
+```
+## Simulating the virus
+```{r}
+num_sims = 1000
+csv_path = ""
+```
+## Do differential equations acuratley model stochastic process?
+## Plotting the likelihood function

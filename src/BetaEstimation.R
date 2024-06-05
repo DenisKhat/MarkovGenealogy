@@ -103,9 +103,9 @@ methodB <- function(data, N){  # METHODS A AND B
   LB <- function(beta){
     val = log(markhov_probability(data[[1,1]], beta, 0, N-1, 1)[ data[[1,2]] + 1 ])
       if (length(data) > 2){
-      for (i in 2:nrow(data)){
-        val = val + log(markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]])
-      }
+        for (i in 2:nrow(data)){
+          val = val + log(markhov_probability(data[[i,1]] - data[[i-1,1]], beta, 0, N-data[[i-1,2]], data[[i-1,2]])[[data[[i,2]] + 1 ]])
+        }
     }
     return(val)
   }

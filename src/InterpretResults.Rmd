@@ -1,0 +1,193 @@
+```{r}
+library(tidyverse)
+library(plotly)
+```
+
+## Single Beta full knowledge simulation
+
+```{r}
+df_full <- read.csv("../simulation_results/fullEstimateResults.csv")
+
+df_full_reference <- read.csv("../simulation1beta.csv")
+# df2 <- df2[which(df2$estimate_1>0.1),] # found that this would come from no run in csv
+df_full <- df_full[which(df_full$id %in% unique(df_full_reference$id)),] # Remove rows with all NA bc/ those simulations failed
+# df2[which(df2$estimate_1>0.9),]
+
+print("Beta estimate")
+beta_bar <- mean(df_full$estimate)
+print(beta_bar)
+print("Confidence interval probability")
+mean(df_full$in_interval, na.rm=T)
+print("Avg. Interval width")
+mean(df_full$interval_width, na.rm=T)
+print("Number of simulations:")
+length(df_full[,1])
+
+ggplot(df_full, aes(estimate)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_segment(x=beta_bar, xend=beta_bar, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1) +
+  labs(
+    x = "\u03B2 Estimate", 
+    y = "Counts",
+    colour = "Statistic"
+  )
+
+
+# df_reference[which(df_reference$id %in% c(1,2,3,4,5)),]
+```
+
+### Volz Estimate (working?!?), Single Simulation
+
+```{r}
+source("Volz.R")
+SAMPLE_ID <- 314
+#275 good, 274 bad, 314 fine
+
+sample_times <- df_full_reference[which(df_full_reference$id == SAMPLE_ID),]$time
+true_estimate <- df_full[which(df_full$id == SAMPLE_ID),]$estimate
+# sample_times
+LV <- function(beta) -Volz_SI(beta, sample_times)
+MLE <- optim(0.5, LV, lower = 0.05, upper = 1, method="L-BFGS-B")$par
+ggplot() +
+  xlim(c(0, 1)) +
+  # ylim(c(100, 160)) +
+  # stat_function(fun=function(x) -LV(x), geom="point")
+  
+  
+  geom_segment(x=MLE, xend=MLE, y=-Inf, yend=-LV(MLE), aes(colour = "MLE (Volz)"), linewidth=1) +
+  geom_segment(x=true_estimate, xend=true_estimate, y=-Inf, yend=-LV(true_estimate), aes(colour = "MLE (Full Info)"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=-Inf, yend=-LV(0.5), aes(colour = "True Value"), linewidth=1)+
+  geom_function(fun=Vectorize(function(x) -LV(x)),size=1) +
+  labs(
+    title=paste("Volz Likelihood Function, Simulation", SAMPLE_ID),
+    colour="Statistic",
+    y="Log Likelihood",
+    x=expression("\u03B2")
+  )
+  
+```
+
+## Single Beta partial knowledge (times 5, 10) simulation
+
+```{r}
+df_part <- read.csv("../slurm_simulation/combined.csv")
+
+print("Beta estimate")
+beta_bar <- mean(df_part$estimate)
+print(beta_bar)
+print("Confidence interval probability")
+mean(df_part$inCI, na.rm=T)
+print("Avg. Interval width")
+mean(df_part$width, na.rm=T)
+print("Number of simulations:")
+length(df_part[,1])
+
+ggplot(df_part, aes(x=estimate)) +
+  geom_histogram(binwidth = 0.05) + #seems some precision was lost, bins of <0.05 look funky
+  geom_segment(x=beta_bar, xend=beta_bar, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1) +
+  labs(
+    x = "\u03B2 Estimate", 
+    y = "Counts",
+    colour = "Statistic"
+  )
+  
+
+```
+
+## Two Beta full knowledge simulation
+
+```{r}
+df2_full <- read.csv("../simulation_results/results_2_beta_full.csv")
+
+df2_full_reference <- read.csv("../simulation2beta.csv")
+df2_full <- df2_full[which(df2_full$id %in% unique(df2_full_reference$id)),] # 
+
+# Remove rows with all NA bc/ those simulations failed
+# df2_full <- df2_full[which(df2_full$estimate_1 >= 0.2),]
+print("Beta 1, Beta 2 mean guess:")
+beta1_bar <- mean(df2_full$estimate_1, na.rm=T)
+beta2_bar <- mean(df2_full$estimate_2, na.rm=T)
+print("Confidence Coverage (beta 1, beta 2):")
+mean(df2_full$in_1, na.rm=T)
+mean(df2_full$in_2, na.rm=T)
+print("Mean interval width")
+mean(df2_full$width_1, na.rm=T)
+mean(df2_full$width_2, na.rm=T)
+print("Number of samples")
+
+ggplot(df2_full, aes(x=estimate_1)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_segment(x=beta1_bar, xend=beta1_bar, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.6, xend=0.6, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1) +
+  labs(
+    x = expression("\u03B2"[1]*" Estimate"), 
+    y = "Counts",
+    colour = "Statistic",
+    title = "Beta 1 Full Knowledge Estimate"
+  )
+  
+ggplot(df2_full, aes(estimate_2)) +
+  geom_histogram(binwidth = 0.01) +
+  geom_segment(x=beta2_bar, xend=beta2_bar, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1) +
+  labs(
+    x = expression("\u03B2"[2]*" Estimate"), 
+    y = "Counts",
+    colour = "Statistic",
+    title = "Beta 2 Full Knowledge Estimate"
+  )
+  
+df2_full_reference[which(df2_full_reference$id %in% subset(df2_full, subset = 0.1 < estimate_1 & estimate_1 < 0.2)$id),]
+
+
+```
+
+### Sample Run
+
+```{r}
+SIM_ID = 271
+sim_times <- df2_full_reference[which(df2_full_reference$id==SIM_ID),]$time
+source("PiecewiseBeta.R")
+val_range <- seq(0.02, 1, by=0.02)
+heatmap_vals <- data.frame(beta1=c(), beta2=c(), likelihood=c())
+for (i in val_range){
+  for (j in val_range){
+    heatmap_vals <- rbind(heatmap_vals, c(beta1=i, beta2=j, likelihood=loglike_C(c(i,j), sim_times)))
+  }
+}
+colnames(heatmap_vals) <- c("beta1", "beta2", "log_likelihood")
+
+cutoff <- median(heatmap_vals[,"log_likelihood"])
+
+# pretty_log_like <- sapply(heatmap_vals[,"log_likelihood"], function(i) max(i, cutoff))
+
+# heatmap_vals <- cbind(heatmap_vals, pretty_log_like)
+
+mle <- df2_full[which(df2_full$id==SIM_ID), ]
+minim <- min(heatmap_vals[,"log_likelihood"])
+maxim <- max(heatmap_vals[,"log_likelihood"])
+# tasteful <- sort(heatmap_vals$log_likelihood, decreasing = TRUE)[ceiling(nrow(heatmap_vals))/100]
+# ggplotly(
+ggplot(heatmap_vals, aes(beta1, beta2)) +
+  geom_raster(aes(fill=log_likelihood)) +
+  scale_fill_gradientn(colors=c("black", "midnightblue","white"),
+                       breaks=c(minim,cutoff,maxim),
+                       labels=c("min", "median","max")) +
+  
+  geom_point(aes(x=0.6, y=0.3),color="seagreen") +
+  annotate('text', x=0.6, y=0.3 + 0.05, color="seagreen", label="\u03B2") +
+  geom_point(aes(x=mle$estimate_1, y=mle$estimate_2), color="palevioletred3") +
+  annotate('text', x=mle$estimate_1, y=mle$estimate_2 + 0.05, label=expression(hat("\u03B2")), color="palevioletred3") +
+  labs(
+    title=paste("Simulation", SIM_ID ," Exact Likelihood Heatmap"),
+    x=expression("\u03B2"[1]),
+    y=expression("\u03B2"[2]),
+    fill="Log Likelihood"
+   
+  )
+
+  
+# )
+```
