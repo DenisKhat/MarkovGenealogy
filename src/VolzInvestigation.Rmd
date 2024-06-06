@@ -1,12 +1,139 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
 # Volz Investigation
+
 ```{r}
 source("MarkhovChain.R")
 library("tidyverse")
 ```
+
 ## Simulating the virus
+
 ```{r}
 num_sims = 1000
-csv_path = ""
+save_path = "SIR_virus_infections.RDS"
+
+full_table <- markhov_virus(end_time = 11, beta = 0.7, gamma = 0.3, S=59, I=1, SIS=FALSE)
+full_table <- cbind(sim_num=1, full_table)
+
+for (i in 2:num_sims){
+  sim_table <- markhov_virus(end_time = 10, beta = 0.7, gamma = 0.3, S=59, I=1)
+  sim_table <- cbind(sim_num=i, sim_table)
+  full_table <- rbind(full_table, sim_table)
+}
+
+saveRDS(full_table, save_path)
+
 ```
-## Do differential equations acuratley model stochastic process?
+
+## Do differential equations accurately estimate stochastic process?
+
+```{r}
+source("Volz.R")
+simulated_data <- readRDS("SIR_virus_infections.RDS")
+
+get_mean_vals <- function(t, data){
+  ids = unique(data$sim_num)
+  Ss <- c()
+  Is <- c()
+  Rs <- c()
+  for(i in 1:1000){
+    run = subset(data, sim_num == i)
+    most_recent_data_point = tail(subset(run, time <= t), n=1)
+    # if (as.double(most_recent_data_point$I) > 0){
+    Ss <- c(Ss, as.double(most_recent_data_point$S)) # Have to invoke as.double due to wierd formatting.
+    Is <- c(Is, as.double(most_recent_data_point$I))
+    Rs <- c(Rs, as.double(most_recent_data_point$R)) }
+  # }
+  return( c(S = mean(Ss), I = mean(Is), R = mean(Rs)) )
+}
+parameters <- c(beta = .7, gamma = .3)
+
+
+SIRreal <- data.frame(time=c(), S=c(), I=c(), R=c())
+for (t in seq(0,11, by=0.1)){
+  mean_real_vals <- get_mean_vals(t, simulated_data)
+  sim_row <- list(time=t, S=mean_real_vals[1]/60, I=mean_real_vals[2]/60, R=mean_real_vals[3]/60)
+  SIRreal <- rbind(SIRreal, sim_row)
+}
+SIRreal
+
+SIRoutput <- as.data.frame(ode(y = initial_state_sir, times = times, func = SIR_model, parms = parameters))
+
+ggplot(data=SIRoutput, aes(x=time)) +
+  # geom_smooth(aes(color="green", y=R)) +
+  geom_smooth(aes(color="blue", y=I)) + 
+  geom_smooth(aes(color="red", y=S)) +
+  # geom_smooth(data=SIRreal, aes(color="darkgreen", x=time, y=R)) +
+  geom_smooth(data=SIRreal, aes(color="lightblue", x=time, y=I)) +
+  geom_smooth(data=SIRreal, aes(color="pink", x=time, y=S)) +
+  scale_color_identity(name = "Function",
+                       breaks = c("red", "pink", "blue", "lightblue"), #, "green", "darkgreen"),
+                       labels = c("ODE S", "SIM S","ODE I", "SIM I"), #,"ODE R", "SIM R"),
+                       aesthetics = c("color"),
+                       guide="legend") +
+  labs(title = "ODE v.s. Simulation")
+
+
+```
+
 ## Plotting the likelihood function
+
+```{r}
+source("Volz.R")
+simulated_data <- readRDS("SIR_virus_infections.RDS")
+SIM_NUM = 151
+run_data <- subset(simulated_data, sim_num == SIM_NUM)
+n = nrow(run_data)
+coalescent_times <- run_data[2:n,]
+coalescent_times <- subset(coalescent_times, affected > 0)
+coalescent_times <- coalescent_times$time
+coalescent_times
+
+val_range <- seq(0, 1, by=0.05)
+heatmap_vals <- data.frame(beta=c(), gamma=c(), likelihood=c())
+for (i in val_range){
+  for (j in val_range){
+    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, likelihood=Volz_SIR(beta = i, gamma=j, sample_times = coalescent_times)))
+  }
+}
+
+cutoff <- median(heatmap_vals[,"likelihood"])
+minim <- min(heatmap_vals[,"likelihood"])
+maxim <- max(heatmap_vals[,"likelihood"])
+
+SIR_like <- function(theta) -Volz_SIR(beta=theta[1],gamma=theta[2],sample_times = coalescent_times)
+MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
+MLE$par
+
+ggplot(heatmap_vals, aes(beta, gamma)) +
+  geom_raster(aes(fill=likelihood)) +
+  scale_fill_gradientn(colors=c("black", "midnightblue","white"),
+                       breaks=c(minim,cutoff,maxim),
+                       labels=c("min", "median","max")) +
+  geom_point(aes(x=0.7, y=0.3),color="seagreen") +
+    annotate('text', x=0.7, y=0.3 + 0.05, color="seagreen", label="\u0398") +
+    geom_point(aes(x=MLE$par[1], y=MLE$par[2]), color="palevioletred3") +
+    annotate('text', x=MLE$par[1], y=MLE$par[2] + 0.05, label=expression(hat("\u0398")), color="palevioletred3") +
+    labs(
+      title=paste("Simulation", SIM_NUM ," Volz LogLikelihood Heatmap"),
+      x=expression("\u03B2"),
+      y=expression("\u03B3"),
+      fill="Log Likelihood"
+     
+    )
+
+```
+
+### Volz Monte Carlo Instead of Diffirential Equation?
+```{r}
+# I will still use diff. eqtn derived derivative of A, so number crunching not too long
+source("Volz.R")
+simulated_data <- readRDS("SIR_virus_infections.RDS")
+SIM_NUM <- 151
+run_data <- subset(simulated_data, sim_num == SIM_NUM)
+A_from_data(times=c(0,1,2,3,4,5,6,7,8,9,10), sample_simulation = run_data, final_time = 10)
+```

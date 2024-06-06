@@ -155,10 +155,47 @@ Volz_SIR <- function(beta, gamma, sample_times){
 
 
 
-SIR_like <- function(theta) -Volz_SIR(beta=theta[1],gamma=theta[2],sample_times = coalescent_times)
 # SIR_like(c(0.7, 0.3))
 # SIR_like(c(0.7, 0.1))
 # SIR_like(c(1, 0.3))
 # SIR_like(c(0.1,2))
 # MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
 # MLE$par
+
+A_from_data <- function(times, sample_simulation, final_time){
+  # times is a vector of times t for which to return A(t, T) for.
+  pop_num <- as.double(sample_simulation$S[1]) +
+    as.double(sample_simulation$I[1]) +
+    as.double(sample_simulation$R[1])
+  final_state <- tail(subset(sample_simulation, time <= final_time), n=1)$I_list
+  final_state <- final_state[[1]]
+  # sample_simulation <- subset(sample_simulation, affected > 0)
+  A_at_t <- function(t){
+    # Get rid of the trivial cases
+    if (length(final_state) == 0){
+      return(0)
+    }
+    if (t == 0){
+      return(1/pop_num)
+    }
+    if (t == final_time){
+      return(length(final_state)/pop_num)
+    }
+    # Now the real work begins...
+    initial_state <- tail(subset(sample_simulation, time <= t), n=1)$I_list
+    initial_state <- as.vector(initial_state[[1]])
+    sims_left <- subset(subset(subset(sample_simulation, time > t), time < final_time), affected > 0)
+    sims_left <- sims_left[nrow(sims_left)[1]:1,]
+    ending_state <- final_state
+    # Likely a much more efficient graph searching algorithm could be implemented here
+    for(j in 1:nrow(sims_left)){
+      if(sims_left$affected[j] %in% ending_state){
+        ending_state <- c(as.integer(sims_left$infector[j]), ending_state)
+      }
+    }
+    progeny_extant <- intersect(initial_state, ending_state)
+    # print(progeny_extant)
+    return(length(progeny_extant)/pop_num)
+  }
+  return(sapply(times, A_at_t))
+}
