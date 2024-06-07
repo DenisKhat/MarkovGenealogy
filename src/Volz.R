@@ -162,6 +162,7 @@ Volz_SIR <- function(beta, gamma, sample_times){
 # MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
 # MLE$par
 
+
 A_from_data <- function(times, sample_simulation, final_time){
   # times is a vector of times t for which to return A(t, T) for.
   pop_num <- as.double(sample_simulation$S[1]) +
