@@ -1,7 +1,7 @@
 library(deSolve)
 # source("src/MarkhovChain.R")
 
-end_time = 11
+end_time = 10
 N = 60
 
 # parameters <- list(beta = 0.7, gamma = 0)
@@ -125,23 +125,28 @@ Volz_SIR <- function(beta, gamma, sample_times){
   parameters <- c(beta = beta, gamma = gamma)
   SIRoutput <- as.data.frame(ode(y = initial_state_sir, times = times, func = SIR_model, parms = parameters))
   # print(SISoutput$S)
-  f_SI_points <- sapply(seq(1, end_time/0.01 + 1, by=1), function(i) beta * SIRoutput$S[i] * SIRoutput$I[i] )
+  # f_SI_points <- sapply(seq(1, end_time/0.01 + 1, by=1), function(i) beta * SIRoutput$S[i] * SIRoutput$I[i] )
+  f_SI_points <- beta * as.numeric(SIRoutput$S) * as.numeric(SIRoutput$I)
+  # print(f_SI_points)
   I_func <- approxfun(x=times, y=as.vector(SIRoutput$I))
+  # print(length(times))
+  # print(length(f_SI_points))
   f_SI <- approxfun(x=times, y=f_SI_points)
   # print("passed f_SI")
   A_initial <- c(A=I_func(10))
   A_model <- function(time, state, parms){ # parms should be nothing...
     with(as.list(c(state, parms)), {
-      dA <- - I_func(10 - time) * ((A/I(10-time))^2)
+      dA <- - f_SI(10 - time) * ((A/I_func(10-time))^2)
       return(list(c(dA)))
     })
   }
   A_ode <- as.data.frame(ode(y=A_initial,times=seq(0, 10, by=0.01), func=A_model, parms = c(), method="ode45"))
   # A_ode$A <- rev(A_ode$A)
   # I'm lazy so this is A backwards in time.
-  A_func <- approxfun(x = seq(0,10,by=0.01),y=as.vector(A_ode$A))
+  A_func <- approxfun(x = times,y=as.vector(A_ode$A))
   # print("hi?")
   dA <- function(x) log(f_SI(x)*(A_func(10-x)/I_func(x))^2)
+  # dA <- function(x) log(A_func(10-x))
   # print(f_SI(0.5))
   # print(A_func(0.5))
   # print(I_func(0.5))
@@ -161,7 +166,26 @@ Volz_SIR <- function(beta, gamma, sample_times){
 # SIR_like(c(0.1,2))
 # MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
 # MLE$par
-
+SIS_A <- function(times, beta=0.7, gamma=0.3){
+  parameters <- c(beta = beta, gamma = gamma)
+  SISoutput <- as.data.frame(ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
+  # f_SI_points <- sapply(seq(0,10, by=0.01), function(i) beta * SISoutput$S[i] * SISoutput$I[i] )
+  f_SI_points <- beta * as.numeric(SISoutput$S) * as.numeric(SISoutput$I)
+  # print(f_SI_points)
+  I_func <- approxfun(x=times, y=as.vector(SISoutput$I))
+  f_SI <- approxfun(x=times, y=f_SI_points)
+  # print("passed f_SI")
+  A_initial <- c(A=I_func(10))
+  A_model <- function(time, state, parms){ # parms should be nothing...
+    with(as.list(c(state, parms)), {
+      dA <- - f_SI(10 - time) * (A/I_func(10-time))^2
+      return(list(c(dA)))
+    })
+  }
+  return( cbind(
+    as.data.frame(ode(y=A_initial,times=times,func=A_model, parms = c(), method="ode45")), 
+    I=SISoutput$I, f_SI=f_SI_points ))
+}
 
 A_from_data <- function(times, sample_simulation, final_time){
   # times is a vector of times t for which to return A(t, T) for.
@@ -200,3 +224,13 @@ A_from_data <- function(times, sample_simulation, final_time){
   }
   return(sapply(times, A_at_t))
 }
+
+# A_dt_from_data <- function(times, sample_simulation, final_time, sims=100){
+#   # This is the derived derivative for dA, using I, A, S given by montecarlo.
+#   for (i in 1:sims){
+#     run = subset(data, sim_num == i)
+#     most_recent_data_point = tail(subset(run, time <= t), n=1)
+#     if (as.double(most_recent_data_point$I) > 0){
+#      Ss <- c(Ss, as.double(most_recent_data_point$S)) # Have to invoke as.double due to wierd formatting.
+#       Is <- c(Is, as.double(most_recent_data_point$I)}
+#   }

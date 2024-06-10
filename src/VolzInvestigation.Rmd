@@ -16,11 +16,11 @@ library("tidyverse")
 num_sims = 1000
 save_path = "SIR_virus_infections.RDS"
 
-full_table <- markhov_virus(end_time = 11, beta = 0.7, gamma = 0.3, S=59, I=1, SIS=FALSE)
+full_table <- markhov_virus(end_time = 11, beta = 0.7, gamma = 0.3, S=59, I=1, SIS=F)
 full_table <- cbind(sim_num=1, full_table)
 
 for (i in 2:num_sims){
-  sim_table <- markhov_virus(end_time = 10, beta = 0.7, gamma = 0.3, S=59, I=1)
+  sim_table <- markhov_virus(end_time = 11, beta = 0.7, gamma = 0.3, S=59, I=1, SIS=F)
   sim_table <- cbind(sim_num=i, sim_table)
   full_table <- rbind(full_table, sim_table)
 }
@@ -29,7 +29,7 @@ saveRDS(full_table, save_path)
 
 ```
 
-## Do differential equations accurately estimate stochastic process?
+## Do differential equations accurately estimate stochastic process? (SIR)
 
 ```{r}
 source("Volz.R")
@@ -68,8 +68,8 @@ ggplot(data=SIRoutput, aes(x=time)) +
   geom_smooth(aes(color="blue", y=I)) + 
   geom_smooth(aes(color="red", y=S)) +
   # geom_smooth(data=SIRreal, aes(color="darkgreen", x=time, y=R)) +
-  geom_smooth(data=SIRreal, aes(color="lightblue", x=time, y=I)) +
-  geom_smooth(data=SIRreal, aes(color="pink", x=time, y=S)) +
+  geom_line(data=SIRreal, aes(color="lightblue", x=time, y=I),linewidth=1) +
+  geom_line(data=SIRreal, aes(color="pink", x=time, y=S),linewidth=1) +
   scale_color_identity(name = "Function",
                        breaks = c("red", "pink", "blue", "lightblue"), #, "green", "darkgreen"),
                        labels = c("ODE S", "SIM S","ODE I", "SIM I"), #,"ODE R", "SIM R"),
@@ -80,18 +80,84 @@ ggplot(data=SIRoutput, aes(x=time)) +
 
 ```
 
+## What about an SIS?
+```{r}
+source("Volz.R")
+source("MarkhovChain.R")
+simulated_data <- readRDS("SIS_virus_infections.RDS")
+simulated_data
+SISexpected <- data.frame(time=c(), I=c(), S=c())
+for (t in seq(0,11, by=0.02)){
+  expected_val <- sum(0:60*as.vector(markhov_probability(t,beta=0.7,gamma=0.3,initial_S = 59, initial_I = 1)))
+  SISexpected <- rbind(SISexpected, list(time=t, I=expected_val/60, S=(60-expected_val)/60))
+}
+
+get_mean_vals <- function(t, data){
+  ids = unique(data$sim_num)
+  Ss <- c()
+  Is <- c()
+  for(i in ids){
+    # print(j)
+    # print(data)
+    run = subset(data, sim_num == i)
+    most_recent_data_point = tail(subset(run, time <= t), n=1)
+    # if (as.double(most_recent_data_point$I) > 0){
+    Ss <- c(Ss, as.double(most_recent_data_point$S)) # Have to invoke as.double due to wierd formatting.
+    Is <- c(Is, as.double(most_recent_data_point$I))
+  # }
+    # print(Ss)
+    # print(Is)
+  }
+  return( c(S = mean(Ss), I = mean(Is)))
+} 
+  
+parameters <- c(beta = .7, gamma = .3)
+
+
+SISreal <- data.frame(time=c(), S=c(), I=c())
+for (t in seq(0,11, by=1)){
+  mean_real_vals <- get_mean_vals(t, simulated_data)
+  sim_row <- list(time=t, S=mean_real_vals[1]/60, I=mean_real_vals[2]/60)
+  SISreal <- rbind(SISreal, sim_row)
+}
+SISreal
+
+SISoutput <- as.data.frame(ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
+
+ggplot(data=SISoutput, aes(x=time)) +
+  geom_line(data=SISexpected, aes(color="blue4", x=time, y=I),linewidth=1) +
+  geom_line(data=SISexpected, aes(color="red4", x=time, y=S),linewidth=1) +
+  # geom_smooth(aes(color="green", y=R)) +
+  geom_smooth(aes(color="blue", y=I)) + 
+  geom_smooth(aes(color="red", y=S)) +
+  # geom_smooth(data=SIRreal, aes(color="darkgreen", x=time, y=R)) +
+  geom_line(data=SISreal, aes(color=alpha("lightblue",0.5), x=time, y=I), linewidth = 1) +
+  geom_line(data=SISreal, aes(color=alpha("pink",0.5), x=time, y=S), linewidth = 1) +
+  scale_color_identity(name = "Function",
+                       breaks = c("red", alpha("pink",0.5),"red4", "blue", alpha("lightblue",0.5),"blue4"), #, "green", "darkgreen"),
+                       labels = c("ODE S", "SIM S","E[S]","ODE I", "SIM I", "E[I]"), #,"ODE R", "SIM R"),
+                       aesthetics = c("color"),
+                       guide="legend") +
+  labs(title = "ODE v.s. Simulation v.s. Expected (SIS)")
+
+
+```
+
 ## Plotting the likelihood function
 
 ```{r}
 source("Volz.R")
 simulated_data <- readRDS("SIR_virus_infections.RDS")
-SIM_NUM = 151
+SIM_NUM = 873
 run_data <- subset(simulated_data, sim_num == SIM_NUM)
 n = nrow(run_data)
 coalescent_times <- run_data[2:n,]
 coalescent_times <- subset(coalescent_times, affected > 0)
+coalescent_times <- subset(coalescent_times, time < 10)
 coalescent_times <- coalescent_times$time
-coalescent_times
+# coalescent_times
+
+Volz_SIR(beta=0.7,gamma=0.3, sample_times = coalescent_times)
 
 val_range <- seq(0, 1, by=0.05)
 heatmap_vals <- data.frame(beta=c(), gamma=c(), likelihood=c())
@@ -104,7 +170,6 @@ for (i in val_range){
 cutoff <- median(heatmap_vals[,"likelihood"])
 minim <- min(heatmap_vals[,"likelihood"])
 maxim <- max(heatmap_vals[,"likelihood"])
-
 SIR_like <- function(theta) -Volz_SIR(beta=theta[1],gamma=theta[2],sample_times = coalescent_times)
 MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
 MLE$par
@@ -129,11 +194,34 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
 ```
 
 ### Volz Monte Carlo Instead of Diffirential Equation?
+#### Compute the experimental A
 ```{r}
-# I will still use diff. eqtn derived derivative of A, so number crunching not too long
 source("Volz.R")
-simulated_data <- readRDS("SIR_virus_infections.RDS")
-SIM_NUM <- 151
-run_data <- subset(simulated_data, sim_num == SIM_NUM)
-A_from_data(times=c(0,1,2,3,4,5,6,7,8,9,10), sample_simulation = run_data, final_time = 10)
+simulated_data <- readRDS("SIS_virus_infections.RDS")
+unique_sims <- unique(simulated_data$sim_num)
+experimental_A <- data.frame()
+for (i in unique_sims){
+# for (i in 1:10){
+  run_data <- subset(simulated_data, sim_num == i)
+  experimental_A <- rbind(experimental_A, A_from_data(times=times, sample_simulation = run_data, final_time = 10))
+}
+
+data <- colMeans(experimental_A,na.rm = T)
+saveRDS(data, file="experimental_A.RDS")
+```
+#### Plot experimental A vs ODE derived A
+```{r}
+source("Volz.R")
+experimental_A <- readRDS("../simulation_results/experimental_A.RDS")
+experimental_A <- as.vector(experimental_A)
+ODE_A <- SIS_A(seq(0,10,by=0.01))
+ODE_A$A <- rev(ODE_A$A) # Account for working backwards in time
+ODE_A
+A_data <- data.frame(time=times, experimental=experimental_A)
+ggplot(data=A_data) +
+  xlim(0,10) +
+  geom_line(color="red", aes(x=time,y=experimental),linewidth=1) +
+  geom_line(data=ODE_A, color="blue",aes(x=time,y=A),linewidth=1) + 
+  geom_line(data=ODE_A, color="blue4",aes(x=time,y=I),linewidth=1) 
+  
 ```
