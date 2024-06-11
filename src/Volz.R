@@ -159,13 +159,6 @@ Volz_SIR <- function(beta, gamma, sample_times){
 } 
 
 
-
-# SIR_like(c(0.7, 0.3))
-# SIR_like(c(0.7, 0.1))
-# SIR_like(c(1, 0.3))
-# SIR_like(c(0.1,2))
-# MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
-# MLE$par
 SIS_A <- function(times, beta=0.7, gamma=0.3){
   parameters <- c(beta = beta, gamma = gamma)
   SISoutput <- as.data.frame(ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
@@ -190,10 +183,11 @@ SIS_A <- function(times, beta=0.7, gamma=0.3){
 A_from_data <- function(times, sample_simulation, final_time){
   # times is a vector of times t for which to return A(t, T) for.
   pop_num <- as.double(sample_simulation$S[1]) +
-    as.double(sample_simulation$I[1]) +
-    as.double(sample_simulation$R[1])
+    as.double(sample_simulation$I[1]) #+
+    # as.double(sample_simulation$R[1])
   final_state <- tail(subset(sample_simulation, time <= final_time), n=1)$I_list
   final_state <- final_state[[1]]
+  # print(sample_simulation$time)
   # sample_simulation <- subset(sample_simulation, affected > 0)
   A_at_t <- function(t){
     # Get rid of the trivial cases
@@ -209,15 +203,31 @@ A_from_data <- function(times, sample_simulation, final_time){
     # Now the real work begins...
     initial_state <- tail(subset(sample_simulation, time <= t), n=1)$I_list
     initial_state <- as.vector(initial_state[[1]])
-    sims_left <- subset(subset(subset(sample_simulation, time > t), time < final_time), affected > 0)
+    sims_left <- subset(subset(sample_simulation, time > t), time < final_time)
+    if (nrow(sims_left) == 0){
+      # this is the same as if we were at end time
+      return(length(final_state)/pop_num)
+    }
     sims_left <- sims_left[nrow(sims_left)[1]:1,]
     ending_state <- final_state
+    # if (nrow(sims_left) <= 1){
+    # print(t)
+    # print(sims_left)
+    # print(initial_state)
+    # print(ending_state)
+      # }
     # Likely a much more efficient graph searching algorithm could be implemented here
     for(j in 1:nrow(sims_left)){
-      if(sims_left$affected[j] %in% ending_state){
+      if (as.integer(sims_left$affected[j]) == 0){
+        # print(as.integer(sims_left$infector[j]))
+        ending_state <- ending_state[ending_state != as.integer(sims_left$infector[j])]
+      }
+      else if(sims_left$affected[j] %in% ending_state){
+        # print(as.integer(sims_left$I[j]))
         ending_state <- c(as.integer(sims_left$infector[j]), ending_state)
       }
     }
+
     progeny_extant <- intersect(initial_state, ending_state)
     # print(progeny_extant)
     return(length(progeny_extant)/pop_num)
@@ -225,7 +235,7 @@ A_from_data <- function(times, sample_simulation, final_time){
   return(sapply(times, A_at_t))
 }
 
-# A_dt_from_data <- function(times, sample_simulation, final_time, sims=100){
+A_dt_from_data <- function(times, sample_simulation, final_time){
 #   # This is the derived derivative for dA, using I, A, S given by montecarlo.
 #   for (i in 1:sims){
 #     run = subset(data, sim_num == i)
