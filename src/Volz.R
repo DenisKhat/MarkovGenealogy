@@ -235,8 +235,27 @@ A_from_data <- function(times, sample_simulation, final_time){
   return(sapply(times, A_at_t))
 }
 
-A_dt_from_mix <- function(times, sample_simulation, final_time){
-  I_values <- c()
+A_dt_from_mix <- function(times, sample_simulation, A_file="src/experimental_A.RDS"){
+  A_values <- readRDS(file = A_file)
+  get_SI <- function(t, data){
+    ids = unique(data$sim_num)
+    Ss <- c()
+    Is <- c()
+    for(i in ids){
+      run = subset(data, sim_num == i)
+      most_recent_data_point = tail(subset(run, time <= t), n=1)
+      Ss <- c(Ss, as.double(most_recent_data_point$S)) # Have to invoke as.double due to wierd formatting.
+      Is <- c(Is, as.double(most_recent_data_point$I))}
+    return(list(S = mean(Ss), I = mean(Is)))
+  } 
+  SI_values <- data.frame(S = c(), I = c())
+  for (t in times){
+    SI_values <- rbind(SI_values, get_SI(t,sample_simulation))
+  }
+  return(sapply(1:length(times), 
+          function(t) ((N*A_values[t]-1) * A_values[t]) *
+              0.7 * SI_values$S[t] / (N*SI_values$I[t]-1)  ) )
+  
 }
 
 A_dt_from_data <- function(times=seq(0,10,by=0.01), A_file="src/experimental_A.RDS"){

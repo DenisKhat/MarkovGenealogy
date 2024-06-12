@@ -242,10 +242,31 @@ ggplot(data=A_data) +
 ```
 
 ### Derivative of A
+#### Bake Mixed A_derivative
+```{r}
+source("Volz.R")
+simulated_data <- readRDS("SIS_virus_infections.RDS")
+A_mixed <- A_dt_from_mix(times = seq(0,10,by=0.01), 
+                         sample_simulation = simulated_data,
+                         A_file = "experimental_A.RDS")
+saveRDS(A_mixed, file="mixed_Adt.RDS")
+```
+#### Graph Mixed A v.s. experimental A
 ```{R}
 source("Volz.R")
+mixed_Adt <- readRDS("mixed_Adt.RDS")
 data_Adt <- A_dt_from_data(A_file="experimental_A.RDS")
-df <- data.frame(time = times, experimental=data_Adt)
+df <- data.frame(time = times, experimental=data_Adt, mixed=mixed_Adt)
 ggplot(df, aes(x=time)) +
-  geom_smooth(aes(y=experimental))
+  geom_smooth(aes(y=experimental, color="#F8766D")) +
+  geom_smooth(aes(y=mixed, color="#00BFC4")) +
+  scale_color_identity(name = "Function",
+                       breaks = c("#F8766D", "#00BFC4"),
+                       labels = c("Approximated", "Derived"),
+                       aesthetics = c("color"),
+                       guide="legend") +
+  labs(title = "Differential Derived V/S Experimentally Approximated",
+       )
+```
+#### Likelihood Function?
 ```
