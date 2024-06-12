@@ -235,12 +235,22 @@ A_from_data <- function(times, sample_simulation, final_time){
   return(sapply(times, A_at_t))
 }
 
-A_dt_from_data <- function(times, sample_simulation, final_time){
-#   # This is the derived derivative for dA, using I, A, S given by montecarlo.
+A_dt_from_mix <- function(times, sample_simulation, final_time){
+  I_values <- c()
+}
+
+A_dt_from_data <- function(times=seq(0,10,by=0.01), A_file="src/experimental_A.RDS"){
+  # A_values  <- A_from_data(times, sample_simulation, final_time)
+  A_values <- readRDS(file = A_file)
+  count_values <- length(A_values)
+  A_dt <- sapply(3:(count_values-2), function(i) (A_values[i+2]-A_values[i-2])/0.02)
+  A_dt <- c((A_values[3]-A_values[1])/0.02, (A_values[4]-A_values[2])/0.02 ,A_dt, (A_values[count_values-1]-A_values[count_values-3])/0.02,(A_values[count_values]-A_values[count_values-1])/0.01)
+  return(A_dt)
+}
+  # This is the derived derivative for dA, using I, A, S given by montecarlo.
 #   for (i in 1:sims){
 #     run = subset(data, sim_num == i)
 #     most_recent_data_point = tail(subset(run, time <= t), n=1)
 #     if (as.double(most_recent_data_point$I) > 0){
 #      Ss <- c(Ss, as.double(most_recent_data_point$S)) # Have to invoke as.double due to wierd formatting.
 #       Is <- c(Is, as.double(most_recent_data_point$I)}
-#   }

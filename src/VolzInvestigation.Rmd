@@ -3,6 +3,7 @@ output: html_document
 editor_options: 
   chunk_output_type: inline
 ---
+
 # Volz Investigation
 
 ```{r}
@@ -81,6 +82,7 @@ ggplot(data=SIRoutput, aes(x=time)) +
 ```
 
 ## What about an SIS?
+
 ```{r}
 source("Volz.R")
 source("MarkhovChain.R")
@@ -195,7 +197,9 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
 ```
 
 ### Volz Monte Carlo Instead of Diffirential Equation?
+
 #### Compute the experimental A
+
 ```{r}
 source("Volz.R")
 simulated_data <- readRDS("SIS_virus_infections.RDS")
@@ -213,7 +217,9 @@ data <- colMeans(experimental_A,na.rm = T)
 data <- as.vector(data)
 saveRDS(data, file="experimental_A.RDS")
 ```
+
 #### Plot experimental A vs ODE derived A
+
 ```{r}
 source("Volz.R")
 simulated_data <- readRDS("SIS_virus_infections.RDS")
@@ -233,4 +239,13 @@ ggplot(data=A_data) +
   geom_line(data=ODE_A, color="steelblue",aes(x=time,y=I),linewidth=1) +
   labs(y="fraction of population")
   
+```
+
+### Derivative of A
+```{R}
+source("Volz.R")
+data_Adt <- A_dt_from_data(A_file="experimental_A.RDS")
+df <- data.frame(time = times, experimental=data_Adt)
+ggplot(df, aes(x=time)) +
+  geom_smooth(aes(y=experimental))
 ```
