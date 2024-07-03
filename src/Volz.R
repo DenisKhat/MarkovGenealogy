@@ -258,11 +258,14 @@ A_dt_from_mix <- function(times, sample_simulation, A_file="src/experimental_A.R
   
 }
 
-A_dt_from_data <- function(times=seq(0,10,by=0.01), A_file="src/experimental_A.RDS"){
+A_dt_from_data <- function(times=seq(0,10,by=0.01), A_file="src/experimental_A.RDS", A_values=c()){
   # A_values  <- A_from_data(times, sample_simulation, final_time)
-  A_values <- readRDS(file = A_file)
+  if (is_empty(A_values)){
+    A_values <- readRDS(file = A_file)
+    }
+  
   count_values <- length(A_values)
-  A_dt <- sapply(3:(count_values-2), function(i) (A_values[i+2]-A_values[i-2])/0.02)
+  A_dt <- sapply(3:(count_values-2), function(i) (A_values[i+2]-A_values[i-2])/0.04)
   A_dt <- c((A_values[3]-A_values[1])/0.02, (A_values[4]-A_values[2])/0.02 ,A_dt, (A_values[count_values-1]-A_values[count_values-3])/0.02,(A_values[count_values]-A_values[count_values-1])/0.01)
   return(A_dt)
 }

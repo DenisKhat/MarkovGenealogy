@@ -150,7 +150,7 @@ ggplot(data=SISoutput, aes(x=time)) +
 
 ```{r}
 source("Volz.R")
-simulated_data <- readRDS("SIR_virus_infections.RDS")
+simulated_data <- readRDS("SIS_virus_infections.RDS")
 SIM_NUM = 873
 run_data <- subset(simulated_data, sim_num == SIM_NUM)
 n = nrow(run_data)
@@ -160,21 +160,21 @@ coalescent_times <- subset(coalescent_times, time < 10)
 coalescent_times <- coalescent_times$time
 # coalescent_times
 
-Volz_SIR(beta=0.7,gamma=0.3, sample_times = coalescent_times)
+Volz_SIS(beta=0.7,gamma=0.3, sample_times = coalescent_times)
 
 val_range <- seq(0, 1, by=0.05)
 heatmap_vals <- data.frame(beta=c(), gamma=c(), likelihood=c())
 for (i in val_range){
   for (j in val_range){
-    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, likelihood=Volz_SIR(beta = i, gamma=j, sample_times = coalescent_times)))
+    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, likelihood=Volz_SIS(beta = i, gamma=j, sample_times = coalescent_times)))
   }
 }
 
 cutoff <- median(heatmap_vals[,"likelihood"])
 minim <- min(heatmap_vals[,"likelihood"])
 maxim <- max(heatmap_vals[,"likelihood"])
-SIR_like <- function(theta) -Volz_SIR(beta=theta[1],gamma=theta[2],sample_times = coalescent_times)
-MLE <- optim(par = c(0.5, 0.5), fn= SIR_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
+SIS_like <- function(theta) -Volz_SIS(beta=theta[1],gamma=theta[2],sample_times = coalescent_times)
+MLE <- optim(par = c(0.5, 0.5), fn= SIS_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
 MLE$par
 
 ggplot(heatmap_vals, aes(beta, gamma)) +
@@ -265,8 +265,27 @@ ggplot(df, aes(x=time)) +
                        labels = c("Approximated", "Derived"),
                        aesthetics = c("color"),
                        guide="legend") +
-  labs(title = "Differential Derived V/S Experimentally Approximated",
+  labs(title = "Differential Mixed V/S Experimentally Approximated",
        )
 ```
 #### Likelihood Function?
+```{R}
+data <- read.csv("../simulation_results/likelihood_table_volz.csv")
+print(data)
+
+ggplot(data, aes(x=beta, y=gamma)) +
+  geom_raster(aes(fill=likelihood)) +
+   scale_fill_gradientn(colors=c("black", "midnightblue","white"),
+                       breaks=c(minim,cutoff,maxim),
+                       labels=c("min", "median","max")) +
+  geom_point(aes(x=0.7, y=0.3),color="seagreen") +
+    annotate('text', x=0.7, y=0.3 + 0.05, color="seagreen", label="\u0398") +
+    labs(
+      title=paste("Simulation", 800 ," Volz Simulated LogLikelihood Heatmap"),
+      x="beta",
+      y="gamma",
+      fill="Log Likelihood"
+    )
+  
 ```
+)

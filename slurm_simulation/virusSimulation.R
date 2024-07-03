@@ -5,7 +5,6 @@ params = read_yaml("slurm_simulation/params.yaml")  # Uncomment when local
 # params = read_yaml("/params.yaml")  # Uncomment when on slurm
 
 N <- params$num
-I <- params$I
 
 markov_virus <- function(beta, I=params$I, t=0, end_t=params$T_f){ #SI model
   I_list <- c(I)
@@ -25,8 +24,10 @@ markov_virus <- function(beta, I=params$I, t=0, end_t=params$T_f){ #SI model
   return(table)
 }
 
-markov_virus_full <- function(beta, gamma, S=params$num - params$I, I=params$I, R=0, t=0, end_t=params$T_f){
-   N <- S + I + R
+
+markov_virus_full <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){
+  #output value as: "time_of_event: infected/0, infected/recovered,
+  N <- S + I + R
   pop <- 1:N
   
   # initialize I_list, S_list, R_list if none given
