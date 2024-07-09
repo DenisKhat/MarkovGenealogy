@@ -1,0 +1,41 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+### Distribution of Infected Probabilities In an SIR Model
+```{r}
+library(ggplot2)
+source("MarkovChain.R")
+probabilities = markov_probability_SIR(times=c(1,5,10,20), beta=0.7, gamma=0.3, initial_S=17, initial_I=3)
+p_given_I_1 <- data.frame(I=c(), P=c())
+p_given_I_5 <- data.frame(I=c(), P=c())
+p_given_I_10 <- data.frame(I=c(), P=c())
+p_given_I_20 <- data.frame(I=c(), P=c())
+for (I in seq(0,20)){
+  p_1 = sum(probabilities[[1]][get_indices_for_I(I, 20)])
+  p_given_I_1 <- rbind(p_given_I_1,list(I=I, P=p_1))
+  
+  p_5 = sum(probabilities[[2]][get_indices_for_I(I, 20)])
+  p_given_I_5 <- rbind(p_given_I_5,list(I=I, P=p_5))
+  
+  
+  p_10 = sum(probabilities[[3]][get_indices_for_I(I, 20)])
+  p_given_I_10 <- rbind(p_given_I_10,list(I=I, P=p_10))
+  
+  
+  p_20 = sum(probabilities[[4]][get_indices_for_I(I, 20)])
+  p_given_I_20 <- rbind(p_given_I_20,list(I=I, P=p_20))
+}
+
+ggplot() +
+  geom_col(data=p_given_I_1,aes(x=I, y=P))
+
+ggplot() +
+  geom_col(data=p_given_I_5,aes(x=I, y=P))
+
+ggplot() +
+  geom_col(data=p_given_I_10,aes(x=I, y=P))
+
+ggplot() +
+  geom_col(data=p_given_I_20,aes(x=I, y=P))
+```

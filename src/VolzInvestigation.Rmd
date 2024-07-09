@@ -234,9 +234,9 @@ A_data <- data.frame(time=times, experimental=experimental_A)
 ggplot(data=A_data) +
   xlim(0,10) +
   geom_line(color="red", aes(x=time,y=experimental),linewidth=1) +
-  geom_line(data=SISexpected,color="pink", aes(x=time,y=I),linewidth=1) +
+  # geom_line(data=SISexpected,color="pink", aes(x=time,y=I),linewidth=1) +
   geom_line(data=ODE_A, color="blue",aes(x=time,y=A),linewidth=1) + 
-  geom_line(data=ODE_A, color="steelblue",aes(x=time,y=I),linewidth=1) +
+  # geom_line(data=ODE_A, color="steelblue",aes(x=time,y=I),linewidth=1) +
   labs(y="fraction of population")
   
 ```
@@ -270,7 +270,7 @@ ggplot(df, aes(x=time)) +
 ```
 #### Likelihood Function?
 ```{R}
-data <- read.csv("../simulation_results/likelihood_table_volz.csv")
+data <- read.csv("../simulation_results/likelihood_table.csv")
 print(data)
 
 ggplot(data, aes(x=beta, y=gamma)) +
@@ -286,6 +286,8 @@ ggplot(data, aes(x=beta, y=gamma)) +
       y="gamma",
       fill="Log Likelihood"
     )
+
+# A, Volz Sim study (higher n)
   
 ```
 )
