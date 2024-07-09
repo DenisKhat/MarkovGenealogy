@@ -288,4 +288,15 @@ ggplot(data, aes(x=beta, y=gamma)) +
     )
   
 ```
-)
+### Simulation Study (Volz, beta=0.7, gamma=0.3)
+```{R}
+ss_data <- read.csv(file="../sim_study_volz.csv")
+ss_data$X <- NULL
+ss_data
+means_data <- data.frame(beta=c(), gamma=c(), mean_likelihood=c())
+for (b in seq(0.1, 1, by=0.1)){
+  for (g in seq(0.1, 1, by=0.1)){
+    mean_likelihood <- 
+  }
+}
+```
