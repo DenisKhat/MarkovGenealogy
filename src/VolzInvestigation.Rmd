@@ -290,13 +290,32 @@ ggplot(data, aes(x=beta, y=gamma)) +
 ```
 ### Simulation Study (Volz, beta=0.7, gamma=0.3)
 ```{R}
+
 ss_data <- read.csv(file="../sim_study_volz.csv")
 ss_data$X <- NULL
-ss_data
-means_data <- data.frame(beta=c(), gamma=c(), mean_likelihood=c())
-for (b in seq(0.1, 1, by=0.1)){
-  for (g in seq(0.1, 1, by=0.1)){
-    mean_likelihood <- 
-  }
+# ss_data
+simulation_mle <- data.frame()
+for (s in seq(1000)){
+  dta <- subset(ss_data, simulation_used == s)
+  dta <- dta[order(dta$likelihood,decreasing = T),]
+  mle_row <- dta[1,]
+  simulation_mle <- rbind(simulation_mle, mle_row)
 }
+mean(simulation_mle$beta)
+mean(simulation_mle$gamma)
+
+ggplot(data=simulation_mle, aes(fill=group)) +
+  geom_histogram(aes(x=beta),fill="blue", position = "identity", alpha = 0.3, binwidth = 0.1) +
+  geom_histogram(aes(x=gamma),fill="red", position = "identity", alpha = 0.3, binwidth = 0.1) + 
+  scale_color_identity(name = "Parameter",
+                       breaks = c("blue", "red"),
+                       labels = c("Beta", "Gamma"),
+                       aesthetics = c("fill"),
+                       guide="legend") +
+  # guides(fill = guide_legend(title = "Title")) +
+  labs(
+    title="Histograms for gamma and beta in sim. study",
+    x="value"
+  )
+
 ```
