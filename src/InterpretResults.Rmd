@@ -1,6 +1,5 @@
 ```{r}
 library(tidyverse)
-library(plotly)
 ```
 
 ## Single Beta full knowledge simulation
@@ -24,14 +23,16 @@ print("Number of simulations:")
 length(df_full[,1])
 
 ggplot(df_full, aes(estimate)) +
-  geom_histogram(binwidth = 0.01) +
+  geom_histogram(binwidth = 0.05) +
   geom_segment(x=beta_bar, xend=beta_bar, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
   geom_segment(x=0.5, xend=0.5, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1) +
   labs(
     x = "\u03B2 Estimate", 
     y = "Counts",
-    colour = "Statistic"
+    colour = "Statistic",
+    title = "Event Times (2.1)"
   )
+  
 
 
 # df_reference[which(df_reference$id %in% c(1,2,3,4,5)),]
@@ -90,7 +91,8 @@ ggplot(df_part, aes(x=estimate)) +
   labs(
     x = "\u03B2 Estimate", 
     y = "Counts",
-    colour = "Statistic"
+    colour = "Statistic",
+    title = "Sampled State (2.2)"
   )
   
 

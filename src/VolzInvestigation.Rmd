@@ -319,5 +319,9 @@ ggplot(data=simulation_mle, aes(fill=group)) +
     title="Histograms for gamma and beta in sim. study",
     x="value"
   )
+ggplot(data=simulation_mle, aes(x=beta, y=gamma)) +
+  geom_point()
+
+
 
 ```
