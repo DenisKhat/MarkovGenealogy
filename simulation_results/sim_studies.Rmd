@@ -202,7 +202,7 @@ ggplot(data=monte_carlo_volz) +
   geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
 
 ## Sampled State
-sampled_events <- read.csv("simulation_results/sample_times_lim.csv")
+sampled_events <- read.csv("simulation_results/sampled.csv")
 ### Stats
 sqrt(mse(sampled_events$beta, 0.7, na.rm = T))
 sqrt(mse(sampled_events$gamma, 0.3, na.rm = T))
@@ -214,7 +214,7 @@ sampled_mean_gamma
 ggplot(data=sampled_events) +
   geom_histogram(aes(x=beta), binwidth = 0.05) +
   labs(
-    title = "Sampled Events Beta Estimate Distribution (2.2)",
+    title = "Sampled State Beta Estimate Distribution (2.2)",
     y="Counts",
     x="Beta Estimate (Bins of width 0.05)",
     color="Statistic"
@@ -225,12 +225,44 @@ ggplot(data=sampled_events) +
 ggplot(data=sampled_events) +
   geom_histogram(aes(x=gamma), binwidth = 0.05) +
   labs(
-    title = "Sampled Events Gamma Estimate Distribution (2.2)",
+    title = "Sampled State Gamma Estimate Distribution (2.2)",
     y="Counts",
     x="Gamma Estimate (Bins of width 0.05)",
     color="Statistic"
   ) +
   geom_segment(x=sampled_mean_gamma, xend=sampled_mean_gamma, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+### Event Times
+event_times <- read.csv("simulation_results/exact.csv")
+### Stats
+sqrt(mse(event_times$beta, 0.7, na.rm = T))
+sqrt(mse(event_times$gamma, 0.3, na.rm = T))
+exact_mean_beta <- mean(event_times$beta, na.rm=T)
+exact_mean_beta
+exact_mean_gamma <- mean(event_times$gamma, na.rm=T)
+exact_mean_gamma
+
+ggplot(data=event_times) +
+  geom_histogram(aes(x=beta), binwidth = 0.05) +
+  labs(
+    title = "Event Times Beta Estimate Distribution (2.1)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=exact_mean_beta, xend=exact_mean_beta, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.7, xend=0.7, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+ggplot(data=event_times) +
+  geom_histogram(aes(x=gamma), binwidth = 0.05) +
+  labs(
+    title = "Event Times Gamma Estimate Distribution (2.1)",
+    y="Counts",
+    x="Gamma Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=exact_mean_gamma, xend=exact_mean_gamma, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
   geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
 
 ```
@@ -286,7 +318,7 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
     geom_point(aes(x=MLE$par[1], y=MLE$par[2]), color="seagreen") +
     annotate('text', x=MLE$par[1], y=MLE$par[2] + 0.05, label=expression("Estimate"), color="seagreen") +
     labs(
-      title=paste("Exact Times Likelihood (2.1)"),
+      title=paste("Event Times Likelihood (2.1)"),
       x=expression("Beta"),
       y=expression("Gamma"),
       fill="Log Likelihood")
@@ -331,5 +363,9 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
     )
 
 
+
+```
+### Check the Expected Times for I in SIS Model
+```{r}
 
 ```
