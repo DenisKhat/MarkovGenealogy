@@ -1,6 +1,5 @@
-rm(list=ls())
-
 source('virusSimulation.R')
+source('MarkovChain.R')
 library(deSolve, lib.loc = "../packages")
 library(Matrix, lib.loc = "../packages")
 library(yaml, lib.loc = "../packages")

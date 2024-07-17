@@ -218,26 +218,26 @@ methodC <- function(data, t_final, N){
 
 
 # just some code to fake sampling data from one simulation
-I <- I_at_t(df, time)
+# I <- I_at_t(df, time)
 
-sampled_times <- c(5, 10) # FOR METHOD A/B
-times <- as.list(df[["times"]])
-times <- do.call(rbind, times)
+# sampled_times <- c(5, 10) # FOR METHOD A/B
+# times <- as.list(df[["times"]])
+# times <- do.call(rbind, times)
 
-sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i,times)), 2]])
+# sampled_I = sapply(sampled_times, function(i) df[[which(times == closest_lower(i,times)), 2]])
 
-dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
+# dfb = data.frame(times=as.vector(sampled_times), I=as.vector(sampled_I))
 # print(dfb)
-dfc = as.vector(do.call(rbind, df[["times"]]))
+# dfc = as.vector(do.call(rbind, df[["times"]]))
 
 
 # A <- methodA(I, time, N)
-B <- methodB(dfb, 60)
-C <- methodC(dfc, 10, 60)
+# B <- methodB(dfb, 60)
+# C <- methodC(dfc, 10, 60)
 
-# A_plot <- A[[2]]
-B_plot <- B[[2]]
-C_plot <- C[[2]]
+A_plot <- A[[2]]
+# B_plot <- B[[2]]
+# C_plot <- C[[2]]
 
-grid.arrange( B_plot, C_plot, nrow = 2)
+# grid.arrange( B_plot, C_plot, nrow = 2)
 

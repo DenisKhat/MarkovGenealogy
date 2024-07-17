@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 ```{r}
 library(tidyverse)
 ```
@@ -46,7 +51,7 @@ SAMPLE_ID <- 314
 #275 good, 274 bad, 314 fine
 
 sample_times <- df_full_reference[which(df_full_reference$id == SAMPLE_ID),]$time
-true_estimate <- df_full[which(df_full$id == SAMPLE_ID),]$estimate
+# true_estimate <- df_full[which(df_full$id == SAMPLE_ID),]$estimate
 # sample_times
 LV <- function(beta) -Volz_SI(beta, sample_times)
 MLE <- optim(0.5, LV, lower = 0.05, upper = 1, method="L-BFGS-B")$par
@@ -56,15 +61,15 @@ ggplot() +
   # stat_function(fun=function(x) -LV(x), geom="point")
   
   
-  geom_segment(x=MLE, xend=MLE, y=-Inf, yend=-LV(MLE), aes(colour = "MLE (Volz)"), linewidth=1) +
-  geom_segment(x=true_estimate, xend=true_estimate, y=-Inf, yend=-LV(true_estimate), aes(colour = "MLE (Full Info)"), linewidth=1) +
-  geom_segment(x=0.5, xend=0.5, y=-Inf, yend=-LV(0.5), aes(colour = "True Value"), linewidth=1)+
+  geom_segment(x=MLE, xend=MLE, y=-Inf, yend=-LV(MLE),alpha = 1, aes(color="Estimated Beta"), linewidth=1) +
+  # geom_segment(x=true_estimate, xend=true_estimate, y=-Inf, yend=-LV(true_estimate), aes(colour = "MLE (Full Info)"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=-Inf, yend=-LV(0.5),aes(color="True Beta"), linewidth=1)+
   geom_function(fun=Vectorize(function(x) -LV(x)),size=1) +
   labs(
-    title=paste("Volz Likelihood Function, Simulation", SAMPLE_ID),
+    title=paste("Sample Volz Likelihood"),
     colour="Statistic",
     y="Log Likelihood",
-    x=expression("\u03B2")
+    x=expression("Beta Estimate")
   )
   
 ```

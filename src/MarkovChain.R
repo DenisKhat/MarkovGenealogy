@@ -6,6 +6,7 @@ library(Matrix)
 
 markov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){
   #output value as: "time_of_event: infected/0, infected/recovered,
+  # when reading the table, an infector of 0 implies a recovery event.
   N <- S + I + R
   pop <- 1:N
   
@@ -102,11 +103,10 @@ markov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list
 # table <- markhov_virus(end_time=10,beta=0.1, gamma=0, S=59, I=1, curr_time=5)
 # print(table[, 1:6])
 
-markov_probability_SIS <- function(times, beta, gamma, initial_S, initial_I, initial_R=0, immunity=FALSE){
+markov_probability_SIS <- function(times, beta, gamma, initial_S, initial_I){
   # Returns a matrix of probabilities, given some times, for all I.
   # output in form of matrix[time, I_value]
-  # immunity=true uses SIR, immunity=false uses SIS. SIR is nonsense right now.
-  N <- initial_S + initial_I + initial_R
+  N <- initial_S + initial_I
   # Code for diff. eqtn solving
   lambda <- sapply(seq(0, N), function(i) beta * (N-i) * i / N)
   mu <- sapply(seq(0, N), function(i) gamma * i)
@@ -114,16 +114,12 @@ markov_probability_SIS <- function(times, beta, gamma, initial_S, initial_I, ini
   for (i in seq(N+1)){
     A[i,i] <- -lambda[i] - mu[i]
     if (i <= N) A[i,i+1] <- lambda[i]
-    if (i > 1 & !immunity) A[i,i-1] <- mu[i]
+    if (i > 1) A[i,i-1] <- mu[i]
     }
   initial_p = sapply(seq(0,N), function(i) 0 + (i == initial_I))
   mass_vectors <- sapply(times, function(t) initial_p %*% expm(A*t))
-  mass_matrix <- do.call(rbind, mass_vectors)
-  rownames(mass_matrix) <- times
-  colnames(mass_matrix) <- seq(0,N)
-  return(as.matrix(mass_matrix))
+  return(mass_vectors)
 }
-
 
 
 markov_probability_SIR <- function(times, beta, gamma, initial_S, initial_I, initial_R=0){
@@ -172,8 +168,87 @@ markov_probability_SIR <- function(times, beta, gamma, initial_S, initial_I, ini
   return(mass_vectors)
 }
 
-  get_indices_for_I <- function(I, N){
-    return(sapply(seq(0,N), function(s) s*(N+1) + I + 1))
+
+get_indices_for_I <- function(I, N){
+  return(sapply(seq(0,N), function(s) s*(N+1) + I + 1))
 }
 
-# markov_probability_SIR(times=4, beta=0.7, gamma=0.3, initial_S=9, initial_I=1)
+
+get_event_likelihood_SI <- function(data, N=60, initial_I=1, end_time=10){
+  # Data is a list of times. Log likelihood function input of form (beta).
+  # Using pop size of 60.
+  M <- length(data)
+  L <- function(parameter){
+    lambda = function(i) parameter * (N-i) * i / N
+    if (M >= 60) out <- log(lambda(1)) - data[i] * lambda(1)
+    else if (M == 0) return (end_time * lambda(1))
+    else out <- (end_time - tail(data,1)) * lambda(M + 1) + log(lambda(1)) - data[i] * lambda(1)
+    for (i in 2:M){
+      out <- out + log(lambda(i)) - (data[i] - data[i-1])*lambda(i)
+    }
+    return(out)
+  }
+}
+
+
+get_sample_times_likelihood_SIS <- function(data){
+  # Data is a df of of the form (time,I), remember to fix times when using this.
+  # representing the observed data. Returns a log likelihood function which can
+  # then be optimized. log likelihood function input of form (beta, gamma).
+  L <- function(parameter){
+    probabilities <- markov_probability_SIS(data$time, parameter[1], parameter[2], 59, 1)
+    likelihood <- 0
+    for (i in length(probabilities)){
+      likelihood <- likelihood + log((probabilities[[i]])[1,data$I[[i]]+1])
+    }
+    return(likelihood)
+  }
+  return(L)
+}
+
+
+get_exact_likelihood_SIS <- function(data, end_time=10){
+  # data is a dataframe from markov_virus.
+  # make sure data includes the initial state, i.e. time = 0
+  # time is a real number, type is +1 if infection, -1 if recovery.
+  N <- data$I[[1]] + data$S[[1]]
+  initial_I <- data$I[[1]]
+  M <- nrow(data)
+  L <- function(parameter){ # parameter is c(beta,gamma)
+    I <- initial_I
+    lambda <- function(i) parameter[[1]] * (N-i) * i / N
+    mu <- function(i) parameter[[2]] * i
+    combined_rate <- function(i) lambda(i) + mu(i)
+    out <- 0
+    for(k in 2:M){
+      out <- out + log(combined_rate(I)) - combined_rate(I) * (data$time[[k]] - data$time[[k-1]])
+      if(data$affected[[k]] == 0){
+        out <- out + log(mu(I)/combined_rate(I))
+        I <- I - 1
+      }
+      else{
+        out <- out + log(lambda(I)/combined_rate(I)) 
+        I <- I + 1
+      }
+      # print(out)
+      # print(I)
+    }
+    if(I != 0){
+      # print("using thingy")
+      # print(out)
+      out <- out - combined_rate(I)*(end_time - data$time[[M]])
+    }
+    return(out)  
+  }
+  return(L)
+}
+
+# sample_dta <- markov_virus(end_time = 10,beta = 0.7,gamma=0.3,S = 59,I=1,R=0,SIS = T)
+# sample_dta$I
+# L <- get_exact_likelihood_SIS(sample_dta)
+# print(L(c(0.7,0.3)))
+# print(L(c(0.7,0.0)))
+
+get_volz_likelihood_SIS <- function(data, N=60, initial_I=1){
+  return(0)
+}

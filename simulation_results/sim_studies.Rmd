@@ -1,0 +1,335 @@
+---
+title: "Compiling simulation Studies"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+source("src/MarkovChain.R")
+source("src/Volz.R")
+library(OmicsPLS)
+library(ggplot2)
+```
+## No Gamma
+using beta = 0.5
+### Sim Studies
+```{r}
+exact_no_gamma <- read.csv("simulation_results/exact_no_gamma.csv")[1:5000,]
+sample_no_gamma <- read.csv("simulation_results/sample_times_no_gamma.csv")
+volz_no_gamma <- read.csv("simulation_results/volz_no_gamma.csv")
+### MSE'S
+
+exact_no_gamma$estimate <- as.numeric(exact_no_gamma$estimate)
+sqrt(mse(exact_no_gamma$estimate, 0.5, na.rm = T))
+sqrt(mse(sample_no_gamma$estimate, 0.5, na.rm = T))
+sqrt(mse(volz_no_gamma$estimate, 0.5, na.rm = T))
+### EXACT GRAPH
+exact_mean <- mean(exact_no_gamma$estimate, na.rm=T)
+ggplot(data=exact_no_gamma) +
+  geom_histogram(aes(x=estimate), binwidth = 0.05) +
+  xlim(0,1.0) +
+  labs(
+    title = "Event Time Estimate Distribution (2.1)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=exact_mean, xend=exact_mean, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+exact_mean
+mean(as.numeric(exact_no_gamma$in_interval), na.rm = T)
+mean(as.numeric(exact_no_gamma$interval_width), na.rm = T)
+
+### SAMPLE_GRAPH
+sampled_mean = mean(sample_no_gamma$estimate, na.rm = T)
+ggplot(data=sample_no_gamma) +
+  geom_histogram(aes(x=estimate), binwidth = 0.05) +
+  labs(
+    title = "2 Sampled State Estimate Distribution (2.2)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=sampled_mean, xend=sampled_mean, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+sampled_mean
+mean(sample_no_gamma$inCI, na.rm = T)
+mean(sample_no_gamma$width, na.rm = T)
+
+### VOLZ_GRAPH
+volz_mean = mean(volz_no_gamma$estimate, na.rm = T)
+ggplot(data=volz_no_gamma) + 
+  geom_histogram(aes(x=estimate), binwidth = 0.05) +
+  labs(
+    title = "Volz Estimate Distribution (2.3)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) + 
+  geom_segment(x=volz_mean, xend=volz_mean, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+volz_mean
+mean(volz_no_gamma$inCI, na.rm = T)
+mean(volz_no_gamma$width, na.rm = T)
+```
+### Sample Graphs
+```{r}
+SAMPLE_ID <- 314
+#275 good, 274 bad, 314 fine
+df_full_reference <- read.csv("simulation1beta.csv")
+
+sample <- df_full_reference[which(df_full_reference$id == SAMPLE_ID),]
+sample_times <- sample$time[2:nrow(sample)]
+sample_states <- data_frame() # states sampled at time 5, 10
+for(i in c(5.0,10.0)){
+  sample_states <- rbind(sample_states, tail(sample[which(sample$time < i),],1))
+}
+# true_estimate <- df_full[which(df_full$id == SAMPLE_ID),]$estimate
+sample_states[,1] <- NULL
+sample_states$I[[1]]
+
+### EVENT GRAPH
+LE <- get_event_likelihood_SI(sample_times)
+Exact_MLE <- optim(0.5, function(x) -LE(x), lower=0.05, upper = 1, method="L-BFGS-B")$par
+ggplot() + 
+  xlim(c(0, 1)) +
+  # ylim(c(100, 160)) +
+  # stat_function(fun=function(x) -LV(x), geom="point")
+  
+  
+  geom_segment(x=Exact_MLE, xend=Exact_MLE, y=-Inf, yend=LE(Exact_MLE),alpha = 1, aes(color="Estimated Beta"), linewidth=1) +
+  # geom_segment(x=true_estimate, xend=true_estimate, y=-Inf, yend=-LV(true_estimate), aes(colour = "MLE (Full Info)"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=-Inf, yend=LE(0.5),aes(color="True Beta"), linewidth=1)+
+  geom_function(fun=Vectorize(function(x) LE(x)),size=1) +
+  labs(
+    title=paste("Event Time Likelihood (2.1)"),
+    colour="Statistic",
+    y="Log Likelihood",
+    x=expression("Beta Estimate")
+  )
+### SAMPLE GRAPH
+LS <- get_sample_times_likelihood_SIS(sample_states)
+Sample_MLE <- optim(0.5, function(x) -LS(c(x,0.0)), lower=0.05, upper = 1, method="L-BFGS-B")$par
+print(Sample_MLE)
+LS_plottable <- approxfun(seq(0,1,by=0.01),sapply(seq(0,1,by=0.01), function(x) LS(c(x,0)) ))
+LS_plottable(0.4)
+ggplot() + 
+  xlim(c(0, 1)) +
+  # ylim(c(100, 160)) +
+  # stat_function(fun=function(x) -LV(x), geom="point")
+  
+  
+  geom_segment(x=Sample_MLE, xend=Sample_MLE, y=-Inf, yend=LS_plottable(Sample_MLE),alpha = 1, aes(color="Estimated Beta"), linewidth=1) +
+  # geom_segment(x=true_estimate, xend=true_estimate, y=-Inf, yend=-LV(true_estimate), aes(colour = "MLE (Full Info)"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=-Inf, yend=LS_plottable(0.5),aes(color="True Beta"), linewidth=1)+
+  geom_function(fun=Vectorize(LS_plottable),size=1) +
+  labs(
+    title=paste("Sampled State Likelihood (2.2)"),
+    colour="Statistic",
+    y="Log Likelihood",
+    x=expression("Beta Estimate")
+  )
+
+### VOLZ GRAPH
+LV <- function(beta) -Volz_SI(beta, sample_times)
+Volz_MLE <- optim(0.5, LV, lower = 0.05, upper = 1, method="L-BFGS-B")$par
+ggplot() +
+  xlim(c(0, 1)) +
+  # ylim(c(100, 160)) +
+  # stat_function(fun=function(x) -LV(x), geom="point")
+  
+  
+  geom_segment(x=Volz_MLE, xend=Volz_MLE, y=-Inf, yend=-LV(Volz_MLE),alpha = 1, aes(color="Estimated Beta"), linewidth=1) +
+  # geom_segment(x=true_estimate, xend=true_estimate, y=-Inf, yend=-LV(true_estimate), aes(colour = "MLE (Full Info)"), linewidth=1) +
+  geom_segment(x=0.5, xend=0.5, y=-Inf, yend=-LV(0.5),aes(color="True Beta"), linewidth=1)+
+  geom_function(fun=Vectorize(function(x) -LV(x)),size=1) +
+  labs(
+    title=paste("Volz Likelihood (2.3)"),
+    colour="Statistic",
+    y="Log Likelihood",
+    x=expression("Beta Estimate")
+  )
+  
+```
+## With Gamma
+using beta = 0.7,
+gamma = 0.3
+### Sim Studies
+```{r}
+## Monte Carlo Volz
+monte_carlo_volz_file <- read.csv("simulation_results/monte_carlo_volz.csv")
+monte_carlo_volz <- data.frame()
+for (s in seq(1000)){
+  dta <- subset(monte_carlo_volz_file, simulation_used == s)
+  dta <- dta[order(dta$likelihood,decreasing = T),]
+  mle_row <- dta[1,]
+  monte_carlo_volz <- rbind(monte_carlo_volz, mle_row)
+}
+monte_carlo_volz
+### Stats
+sqrt(mse(monte_carlo_volz$beta, 0.7, na.rm = T))
+sqrt(mse(monte_carlo_volz$gamma, 0.3, na.rm = T))
+mc_volz_mean_beta <- mean(monte_carlo_volz$beta, na.rm=T)
+mc_volz_mean_beta
+mc_volz_mean_gamma <- mean(monte_carlo_volz$gamma, na.rm=T)
+mc_volz_mean_gamma
+### Plots
+ggplot(data=monte_carlo_volz) +
+  geom_histogram(aes(x=beta), binwidth = 0.1) +
+  xlim(0.0,1.0) +
+  labs(
+    title = "Volz Monte Carlo Beta Estimate Distribution (2.4)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.1)",
+    color="Statistic"
+  ) +
+  geom_segment(x=mc_volz_mean_beta, xend=mc_volz_mean_beta, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.7, xend=0.7, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+ggplot(data=monte_carlo_volz) +
+  geom_histogram(aes(x=gamma), binwidth = 0.1) +
+  xlim(0.0,1.0) +
+  labs(
+    title = "Volz Monte Carlo Gamma Estimate Distribution (2.4)",
+    y="Counts",
+    x="Gamma Estimate (Bins of width 0.1)",
+    color="Statistic"
+  ) +
+  geom_segment(x=mc_volz_mean_gamma, xend=mc_volz_mean_gamma, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+## Sampled State
+sampled_events <- read.csv("simulation_results/sample_times_lim.csv")
+### Stats
+sqrt(mse(sampled_events$beta, 0.7, na.rm = T))
+sqrt(mse(sampled_events$gamma, 0.3, na.rm = T))
+sampled_mean_beta <- mean(sampled_events$beta, na.rm=T)
+sampled_mean_beta
+sampled_mean_gamma <- mean(sampled_events$gamma, na.rm=T)
+sampled_mean_gamma
+
+ggplot(data=sampled_events) +
+  geom_histogram(aes(x=beta), binwidth = 0.05) +
+  labs(
+    title = "Sampled Events Beta Estimate Distribution (2.2)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=sampled_mean_beta, xend=sampled_mean_beta, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.7, xend=0.7, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+ggplot(data=sampled_events) +
+  geom_histogram(aes(x=gamma), binwidth = 0.05) +
+  labs(
+    title = "Sampled Events Gamma Estimate Distribution (2.2)",
+    y="Counts",
+    x="Gamma Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=sampled_mean_gamma, xend=sampled_mean_gamma, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+```
+### Sample SIM STUDY!
+```{r}
+df <- data.frame()
+for (i in 1:5000){
+  data <- markov_virus(10, 0.7, 0.3, S=59, I=1,SIS=TRUE)
+  data <- data[,c("time", "I")]
+  sample_states <- data_frame() # states sampled at time 5, 10
+  for(i in c(5.0,10.0)){
+    sample_states <- rbind(sample_states, tail(data[which(data$time < i),],1))
+  }
+  LS <- get_sample_times_likelihood_SIS(data)
+  MLE <- optim(c(0.5,0.5), function(theta) -LS(theta), lower = c(0,0), upper = c(1,1))
+  df <- rbind(df, list(id=i, beta=MLE$par[[1]], gamma=MLE$par[[2]]))
+}
+
+write.csv(df, file="simulation_results/sample_times.csv", row.names = F, col.names = F)
+```
+### Sample Graphs
+```{r}
+### Volz Ones In VolzInvestigation.Rmd
+data <- subset(readRDS("src/SIS_virus_infections.RDS"), sim_num==200)
+print(data[,c("time","S","I")])
+# data <- markov_virus(end_time=10,beta = 0.7,gamma=0.3,S = 59,I=1,SIS=T)
+# print(data)
+val_range <- seq(0.00,1,by=0.05)
+### Exact
+LE <- get_exact_likelihood_SIS(data)
+LE(c(0.7,0.3))
+LE(c(0.7,0.0))
+MLE <- optim(c(0.5,0.5), function(theta) -LE(theta), lower = c(0.0,0.05), upper = c(1,1))
+heatmap_vals <- data.frame(beta=c(), gamma=c(), likelihood=c())
+for (i in val_range){
+  for (j in val_range){
+    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, likelihood=LE(c(i,j))))
+  }
+}
+
+heatmap_vals_for_stats <- subset(heatmap_vals, likelihood != -Inf)
+cutoff <- median(heatmap_vals_for_stats[,"likelihood"])
+minim <- min(heatmap_vals_for_stats[,"likelihood"])
+maxim <- max(heatmap_vals_for_stats[,"likelihood"])
+
+ggplot(heatmap_vals, aes(beta, gamma)) +
+  geom_raster(aes(fill=likelihood)) +
+  scale_fill_gradientn(colors=c("black", "midnightblue","white"),
+                       breaks=c(minim,cutoff,maxim),
+                       labels=c("min", "median","max")) +
+  geom_point(aes(x=0.7, y=0.3),color="palevioletred3") +
+    annotate('text', x=0.7, y=0.3 + 0.05, color="palevioletred3", label="True Value") +
+    geom_point(aes(x=MLE$par[1], y=MLE$par[2]), color="seagreen") +
+    annotate('text', x=MLE$par[1], y=MLE$par[2] + 0.05, label=expression("Estimate"), color="seagreen") +
+    labs(
+      title=paste("Exact Times Likelihood (2.1)"),
+      x=expression("Beta"),
+      y=expression("Gamma"),
+      fill="Log Likelihood")
+     
+### Sample
+sample_states <- data_frame() # states sampled at time 5, 10
+for(i in c(5.0,10.0)){
+  sample_states <- rbind(sample_states, tail(data[which(data$time < i),],1))
+}
+LS <- get_sample_times_likelihood_SIS(sample_states)
+LS(c(0.7,0.3))
+LS(c(1, 0.45))
+MLE <- optim(c(0.5,0.5), function(theta) -LS(theta), lower = c(0,0), upper = c(1,1))
+MLE$par
+heatmap_vals <- data.frame(beta=c(), gamma=c(), likelihood=c())
+for (i in val_range){
+  for (j in val_range){
+    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, likelihood=LS(c(i,j))))
+  }
+}
+
+heatmap_vals_for_stats <- subset(heatmap_vals, likelihood != -Inf)
+cutoff <- median(heatmap_vals_for_stats[,"likelihood"])
+minim <- min(heatmap_vals_for_stats[,"likelihood"])
+maxim <- max(heatmap_vals_for_stats[,"likelihood"])
+
+ggplot(heatmap_vals, aes(beta, gamma)) +
+  geom_raster(aes(fill=likelihood)) +
+  scale_fill_gradientn(colors=c("black", "midnightblue","white"),
+                       breaks=c(minim,cutoff,maxim),
+                       labels=c("min", "median","max")) +
+  geom_point(aes(x=0.7, y=0.3),color="palevioletred3") +
+    annotate('text', x=0.7, y=0.3 + 0.05, color="palevioletred3", label="True Value") +
+    geom_point(aes(x=MLE$par[1], y=MLE$par[2]), color="seagreen") +
+    annotate('text', x=MLE$par[1], y=MLE$par[2] + 0.05, label=expression("Estimate"), color="seagreen") +
+    labs(
+      title=paste("Sampled State Likelihood (2.2)"),
+      x=expression("Beta"),
+      y=expression("Gamma"),
+      fill="Log Likelihood"
+     
+    )
+
+
+
+```

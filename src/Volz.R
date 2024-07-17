@@ -74,6 +74,7 @@ Volz_SI <- function(beta, sample_times){
 }
 
 Volz_SIS <- function(beta, gamma, sample_times){
+  # print(sample_times)
   parameters <- c(beta = beta, gamma = gamma)
   SISoutput <- as.data.frame(ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
   # print(SISoutput$S)

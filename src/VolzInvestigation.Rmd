@@ -1,7 +1,7 @@
 ---
 output: html_document
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 # Volz Investigation
@@ -149,9 +149,9 @@ ggplot(data=SISoutput, aes(x=time)) +
 ## Plotting the likelihood function
 
 ```{r}
-source("Volz.R")
-simulated_data <- readRDS("SIS_virus_infections.RDS")
-SIM_NUM = 873
+source("src/Volz.R")
+simulated_data <- readRDS("src/SIS_virus_infections.RDS")
+SIM_NUM = 200
 run_data <- subset(simulated_data, sim_num == SIM_NUM)
 n = nrow(run_data)
 coalescent_times <- run_data[2:n,]
@@ -170,9 +170,11 @@ for (i in val_range){
   }
 }
 
-cutoff <- median(heatmap_vals[,"likelihood"])
-minim <- min(heatmap_vals[,"likelihood"])
-maxim <- max(heatmap_vals[,"likelihood"])
+heatmap_vals_for_stats <- subset(heatmap_vals, likelihood != -Inf)
+cutoff <- median(heatmap_vals_for_stats[,"likelihood"])
+minim <- min(heatmap_vals_for_stats[,"likelihood"])
+maxim <- max(heatmap_vals_for_stats[,"likelihood"])
+
 SIS_like <- function(theta) -Volz_SIS(beta=theta[1],gamma=theta[2],sample_times = coalescent_times)
 MLE <- optim(par = c(0.5, 0.5), fn= SIS_like, method="L-BFGS-B", lower = c(0.01,0.01), upper = c(1,1))
 MLE$par
@@ -182,14 +184,14 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
   scale_fill_gradientn(colors=c("black", "midnightblue","white"),
                        breaks=c(minim,cutoff,maxim),
                        labels=c("min", "median","max")) +
-  geom_point(aes(x=0.7, y=0.3),color="seagreen") +
-    annotate('text', x=0.7, y=0.3 + 0.05, color="seagreen", label="\u0398") +
-    geom_point(aes(x=MLE$par[1], y=MLE$par[2]), color="palevioletred3") +
-    annotate('text', x=MLE$par[1], y=MLE$par[2] + 0.05, label=expression(hat("\u0398")), color="palevioletred3") +
+  geom_point(aes(x=0.7, y=0.3),color="palevioletred3") +
+    annotate('text', x=0.7, y=0.3 + 0.05, color="palevioletred3", label="True Value") +
+    geom_point(aes(x=MLE$par[1], y=MLE$par[2]), color="seagreen") +
+    annotate('text', x=MLE$par[1], y=MLE$par[2] + 0.05, label=expression("Estimate"), color="seagreen") +
     labs(
-      title=paste("Simulation", SIM_NUM ," Volz LogLikelihood Heatmap"),
-      x=expression("\u03B2"),
-      y=expression("\u03B3"),
+      title=paste("Volz Likelihood (2.3)"),
+      x=expression("Beta"),
+      y=expression("Gamma"),
       fill="Log Likelihood"
      
     )
@@ -270,18 +272,25 @@ ggplot(df, aes(x=time)) +
 ```
 #### Likelihood Function?
 ```{R}
-data <- read.csv("../simulation_results/likelihood_table.csv")
-print(data)
-
+data <- read.csv("simulation_results/monte_carlo_volz.csv")
+data <- subset(data, simulation_used == 200)
+maxs <- tail(data[order(replace_na(data$likelihood,-Inf)),],1)
+heatmap_vals_for_stats <- subset(data, likelihood != -Inf)
+cutoff <- median(heatmap_vals_for_stats[,"likelihood"])
+minim <- min(heatmap_vals_for_stats[,"likelihood"])
+maxim <- max(heatmap_vals_for_stats[,"likelihood"])
 ggplot(data, aes(x=beta, y=gamma)) +
   geom_raster(aes(fill=likelihood)) +
    scale_fill_gradientn(colors=c("black", "midnightblue","white"),
                        breaks=c(minim,cutoff,maxim),
                        labels=c("min", "median","max")) +
-  geom_point(aes(x=0.7, y=0.3),color="seagreen") +
-    annotate('text', x=0.7, y=0.3 + 0.05, color="seagreen", label="\u0398") +
+  geom_point(aes(x=0.7, y=0.3),color="palevioletred3") +
+    annotate('text', x=0.7, y=0.3 + 0.04, color="palevioletred3", label="True Value") +
+
+  geom_point(aes(x=maxs$beta, y=maxs$gamma),color="seagreen") +
+    annotate('text', x=maxs$beta, y=maxs$gamma + 0.04, color="seagreen", label="Estimate") +
     labs(
-      title=paste("Simulation", 800 ," Volz Simulated LogLikelihood Heatmap"),
+      title="Volz Monte Carlo Likelihood (2.4)",
       x="beta",
       y="gamma",
       fill="Log Likelihood"
@@ -292,8 +301,7 @@ ggplot(data, aes(x=beta, y=gamma)) +
 ```
 ### Simulation Study (Volz, beta=0.7, gamma=0.3)
 ```{R}
-
-ss_data <- read.csv(file="../sim_study_volz.csv")
+ss_data <- read.csv(file="simulation_results/monte_carlo_volz.csv")
 ss_data$X <- NULL
 # ss_data
 simulation_mle <- data.frame()
