@@ -1,6 +1,6 @@
 library(deSolve)
-library(ggplot2)
-library(gridExtra)  # install.packages("gridExtra")
+# library(ggplot2)
+# library(gridExtra)  # install.packages("gridExtra")
 library(Matrix)
 
 
@@ -167,6 +167,15 @@ markov_probability_SIR <- function(times, beta, gamma, initial_S, initial_I, ini
   mass_vectors <- sapply(times, function(t) expm(A*t) %*% initial_P)
   return(mass_vectors)
 }
+
+
+expected_I <- function(beta, gamma, time, initial_S = 59, initial_I = 1){
+  probabilities <- markov_probability_SIS(time, beta, gamma, initial_S, initial_I)[[1]]
+  N <- initial_I + initial_S
+  return(sum(sapply(1:N, function(i) i * probabilities[i+1] )))
+}
+
+expected_I(0.7, 0.3, 5)
 
 
 get_indices_for_I <- function(I, N){
