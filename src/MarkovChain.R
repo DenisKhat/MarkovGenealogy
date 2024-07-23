@@ -2,6 +2,7 @@ library(deSolve)
 # library(ggplot2)
 # library(gridExtra)  # install.packages("gridExtra")
 library(Matrix)
+source("Volz.R")
 
 
 markov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){

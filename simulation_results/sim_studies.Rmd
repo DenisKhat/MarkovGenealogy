@@ -367,21 +367,22 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
 ```
 ### Check the Expected Times for I in SIS Model
 ```{r}
-val_range <- seq(0.00,5,by=0.05)
+val_range <- seq(0.00,10,by=0.1)
 expected_true <- expected_I(0.7, 0.3, 5)
 heatmap_vals <- data.frame(beta=c(), gamma=c(), expected=c())
 for (i in val_range){
   for (j in val_range){
-    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, expected=5 - abs(expected_true-expected_I(i, j, 5))))
+    distance <- abs(expected_true-expected_I(i, j, 5))
+    if (distance > expected_true) distance <- expected_true # do a cutoff for visuals
+    heatmap_vals <- rbind(heatmap_vals, list(beta=i, gamma=j, expected=distance))
   }
 }
 cutoff <- median(heatmap_vals[,"expected"])
 minim <- min(heatmap_vals[,"expected"])
-maxim <- max(heatmap_vals[,"expected"])
 
 ggplot(heatmap_vals, aes(beta, gamma), ) +
   geom_raster(aes(fill=expected)) +
   scale_fill_gradientn(colors=c("black", "midnightblue","white"),
-                      breaks=c(maxim,cutoff,minim),
+                      breaks=c(expected_true,cutoff,minim),
                       labels=c("max", "median","min"))
 ```
