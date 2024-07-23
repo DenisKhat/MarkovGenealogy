@@ -1,6 +1,7 @@
 library(deSolve)
 library(Matrix)
 library(mosaicCalc)
+library(expm)
 
 get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
   # The function does not consider lineages yet. 
@@ -28,7 +29,7 @@ get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
   forward_P <- function(t){
     # returns a vector with the probability of each state as an entry, 
     # at some time t.
-    return(initial_P %*% expm(A * (t-initial$time)))
+    return(initial_P %*% expm(A * (t-initial$time), do.sparseMsg = F))
   }
   
   ### Now do it backwards in time to form a stochastic bridge (consider final state)
@@ -58,18 +59,37 @@ get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
     for (j in 1:(N+1)){
       # print(up(t, j-1))
       # print(down(t, j-1))
-      out[j,j] <- integrate(Vectorize(function(x) - up(x, j-1) - down(x, j-1)), lower = final$time, upper = t)[[1]]
-      if (j <= N) out[j, j+1] <- integrate(Vectorize(function(x) down(x, j-1)), lower = final$time, upper = t)[[1]]
-      if (j > 1) out[j, j-1] <- integrate(Vectorize(function(x) up(x, j-1)), lower = final$time, upper = t)[[1]]
+      out[j,j] <- integrate(Vectorize(function(x)  up(x, j-1) + down(x, j-1)), lower = final$time, upper = final$time-t,subdivisions = 2000)[[1]]
+      if (j > 1) out[j, j-1] <- integrate(Vectorize(function(x) - down(x, j-1)), lower = final$time, upper = final$time-t,subdivisions = 2000)[[1]]
+      if (j <= N) out[j, j+1] <- integrate(Vectorize(function(x) - up(x, j-1)), lower = final$time, upper = final$time-t,subdivisions = 2000)[[1]]
     }
     return(out)
   }
-  
-  return( sapply(times, function(t) final_P %*% expm(fundamental_matrix(t))) )
-  
+  return( sapply(times, function(s) final_P %*% expm(fundamental_matrix(final$time - s), do.sparseMsg = F)) )
 }
 
-prob = get_bridge_pmf(c(9),0.7, 0.3, list(I=1, time=0), list(I=30, time=10), N=60)[[1]]
-prob <- as.numeric(prob)
-prob
-sum(prob)
+
+prob = get_bridge_pmf(c(0.09),0.7, 0.3, list(I=1, time=0), list(I=11, time=10), N=60)#[[1,2]]
+
+
+get_indexing_table <- function(N){
+  df <- data.frame(index=c(),state=c())
+  k <- 1
+  l <- 1
+  for (i in 1:(N*(N+1)/2)){
+    # add state
+    df <- rbind(df, list(index=i, state=c(k,l)))
+    # setup next state
+    if (l < k){
+      l <- l + 1
+    }
+    else{
+      k <- k + 1
+      l <- 1
+    }
+  }
+  return(df)
+}
+# prob <- as.numeric(prob)
+# prob
+# sum(prob)
