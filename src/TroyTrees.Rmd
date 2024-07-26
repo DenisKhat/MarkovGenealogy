@@ -1,0 +1,35 @@
+---
+title: "Troy Trees Histograms"
+output: html_notebook
+---
+
+
+```{r}
+source("TroyTrees.R")
+library(ggplot2)
+TIME <- 8
+bridge <- get_bridge_pmf(c(TIME),0.7, 0.3, list(I=1, time=0), list(I=6, time=10), N=10)
+partial_bridge <- get_partial_info_bridge_pmf(TIME, 0.7, 0.3, initial=list(I=1, time=0), final=list(I=6, L=4, time=10), 10)
+bridge <- data.frame(I=0:10, P=bridge[,1])
+bridge
+partial_bridge
+
+ggplot(data = bridge, aes(x = I, y=P)) + 
+  geom_col()
+
+partial_bridge_I <- data.frame(I=c(), P=c())
+partial_bridge_L <- data.frame(L=c(), P=c())
+for (i in unique(partial_bridge$I)){
+  partial_bridge_I <- rbind(partial_bridge_I, list(I=i, P=sum(subset(partial_bridge, I==i)$P)))
+}
+
+for (l in unique(partial_bridge$L)){
+  partial_bridge_L <- rbind(partial_bridge_L, list(L=l, P=sum(subset(partial_bridge, L==l)$P)))
+}
+  
+ggplot(data = partial_bridge_I, aes(x = I, y=P)) + 
+  geom_col()
+
+ggplot(data = partial_bridge_L, aes(x = L, y=P)) + 
+  geom_col()
+```
