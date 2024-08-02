@@ -33,3 +33,7 @@ ggplot(data = partial_bridge_I, aes(x = I, y=P)) +
 ggplot(data = partial_bridge_L, aes(x = L, y=P)) + 
   geom_col()
 ```
+```{r}
+source("MarkovChain.R")
+markov_probability_SIS(c(5),beta = 0.7, gamma = 0.3,initial_S=59, initial_I=1)
+```

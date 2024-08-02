@@ -4,7 +4,7 @@ library(mosaicCalc)
 library(expm)
 
 get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
-  # The function does not consider lineages yet. 
+  # The function does not consider lineages.
   # Initial and final are given in this form:
   # list(I=i, time=t)
   
@@ -68,9 +68,7 @@ get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
   return( sapply(times, function(s) final_P %*% expm(fundamental_matrix(final$time - s), do.sparseMsg = F)) )
 }
 
-
 #prob = get_bridge_pmf(c(0.0001),0.7, 0.3, list(I=1, time=0), list(I=11, time=10), N=60)#[[1,2]]
-
 
 get_indexing_table <- function(N){
   df <- data.frame(index=c(),state=c())
@@ -94,8 +92,7 @@ get_indexing_table <- function(N){
 # prob
 # sum(prob)
 get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
-  ### NOTE HARDCODED TIME STARTS AT 1, TODO CHANGE THIS!!
-  # The function does not consider lineages yet. 
+  ### NOTE HARDCODED TIME STARTS AT 0, TODO CHANGE THIS!!
   # Initial and final are given in this form:
   # list(I=i, L=l, time=t)
   indices <- get_indexing_table(N)
@@ -175,4 +172,87 @@ get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
   return(output_df)
 }
 
-#dff <- get_partial_info_bridge_pmf(5, 0.7, 0.3, initial=list(I=1, L=1, time=0), final=list(I=5, L=3, time=10), 10)
+
+get_indexing_table_full <- function(N){
+  # Includes states with 0 Lineages, not needed for the above,
+  # but needed for the "full" tree.
+  df <- data.frame(index=c(),state=c())
+  k <- 0
+  l <- 0
+  for (i in 1:((N+1)*(N+2)/2)){
+    # add state
+    df <- rbind(df, list(index=i, I=k, L=l))
+    # setup next state
+    if (l < k){
+      l <- l + 1
+    }
+    else{
+      k <- k + 1
+      l <- 0
+    }
+  }
+  return(df)
+}
+# prob <- as.numeric(prob)
+#dff <- get_partial_info_bridge_pmf(5, 0.7, 0.3, initial=list(I=1, time=0), final=list(I=11, L=8, time=10), 60)
+partial_info_bridge_experiment <- function(time, beta, gamma, initial, final, N){
+  indices <- get_indexing_table_full(N)
+  # Helper functions for index table
+  get_index <- function(i, l) subset(indices, I == i & L == l)$index
+  get_state <- function(index){
+    wanted_row <- indices[index,]
+    return(list(I=wanted_row$I, L=wanted_row$L))
+  }
+  # Rates:
+  lambda <- function(I) {
+    if (0 <= I & I < N) return(I*(N-I)*beta/N)
+    else return(0) }
+  mu <- function(I){ 
+    if (0 < I & I <= N) return(I*gamma)
+    else return(0) }
+  chi <- function(I, L) {
+    if(2 <= L & L <= I) return(choose(L, 2) / choose(I, 2))
+    else return(0) }
+  
+  # P, the P(i, l | i_0, l_0) ---
+  C <- matrix(data=0, nrow=N+1, ncol=N+1)
+  for(k in 0:N){ # the index is infected + 1
+    C[k+1,k+1] <- - lambda(k) - mu(k)
+    if (k > 0) C[k+1, k] <- mu(k-1)
+    if (k < N) C[k+1, k+2] <- lambda(k+1)
+  }
+  initial_p <- sapply(0:N, function(x) 0 + (x == initial$I)) 
+  print(C)
+  forwards_P <- expm(C*(time-initial$time)) %*% initial_p #(A = C, v = initial_p, t=time-initial$time)$eAtv 
+  print(forwards_P)
+  
+  # Q, the P(i_f, l_f | i, l) ---
+  STATES_COUNT <- (N+1)*(N+2)/2
+  B <- matrix(data=0, nrow=STATES_COUNT, ncol=STATES_COUNT)
+  for(k in 1:STATES_COUNT){
+    curr <- get_state(k)
+    # Construct a matrix similar to that of above, using mu and lambda, 
+    # (instead of up/down), and transposing.
+    B[k,k] <- -mu(curr$I+1) - lambda(curr$I-1)
+    if (curr$L < curr$I){
+      B[k,get_index(curr$I-1, curr$L)] <- mu(curr$I)
+    }
+    if (curr$I < N){
+      B[k,get_index(curr$I+1, curr$L)] <- lambda(curr$I) * (1-chi(I=curr$I+1, L=curr$L))
+      B[k,get_index(curr$I+1, curr$L+1)] <- lambda(curr$I) * chi(I=curr$I+1,L=curr$L+1)
+    }
+  }
+  final_g <- numeric(length = STATES_COUNT)
+  final_g[get_index(i=final$I, l=final$L)] <- 1
+  backwards_P <- expAtv(B, final_g, final$time - time)$eAtv
+  backwards_initial <- expAtv(B, final_g, final$time - initial$time)$eAtv
+  summed_indices <- sapply(0:initial$I, function(l) get_index(initial$I, l))
+  summed_indices <- as.integer(summed_indices)
+  normalization <- sum(backwards_initial[summed_indices])
+  print(backwards_P)
+  print(normalization)
+}
+
+
+prob <- partial_info_bridge_experiment(time=1, beta=0.7, gamma=0.3, initial=list(time=0,I=1),final=list(time=10, I=11, L=9), N=60)
+sum(prob)
