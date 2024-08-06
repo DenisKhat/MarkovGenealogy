@@ -224,7 +224,7 @@ partial_info_bridge_experiment <- function(time, beta, gamma, initial, final, N)
   initial_p <- sapply(0:N, function(x) 0 + (x == initial$I)) 
   print(C)
   forwards_P <- expm(C*(time-initial$time)) %*% initial_p #(A = C, v = initial_p, t=time-initial$time)$eAtv 
-  print(forwards_P)
+  #print(forwards_P)
   
   # Q, the P(i_f, l_f | i, l) ---
   STATES_COUNT <- (N+1)*(N+2)/2
@@ -249,10 +249,19 @@ partial_info_bridge_experiment <- function(time, beta, gamma, initial, final, N)
   summed_indices <- sapply(0:initial$I, function(l) get_index(initial$I, l))
   summed_indices <- as.integer(summed_indices)
   normalization <- sum(backwards_initial[summed_indices])
-  print(backwards_P)
-  print(normalization)
+  final_out <- data.frame(I=c(), L=c(), P=c())
+  for(k in 1:STATES_COUNT){
+    curr <- get_state(k)
+    prob <- backwards_P[k] * forwards_P[curr$I + 1] / normalization
+    dta <- list(I=curr$I, L=curr$L, P=prob)
+    final_out <- rbind(final_out, dta)
+  }
+  #norm <- sum(final_out$P)
+  final_out$P <- final_out$P# / norm
+  return(final_out)
 }
 
 
-prob <- partial_info_bridge_experiment(time=1, beta=0.7, gamma=0.3, initial=list(time=0,I=1),final=list(time=10, I=11, L=9), N=60)
-sum(prob)
+prob <- partial_info_bridge_experiment(time=1, beta=0.7, gamma=0.3, initial=list(time=0,I=1),final=list(time=5, I=6, L=5), N=10)
+prob_2 <- get_partial_info_bridge_pmf(time=1, beta=0.7, gamma=0.3, initial=list(time=0,I=1),final=list(time=5, I=6, L=5), N=10)
+sum(prob$P)
