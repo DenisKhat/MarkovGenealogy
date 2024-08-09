@@ -116,8 +116,7 @@ get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
     if (i > 0) A[i+1, i] <- mu(i-1)
     if (i < N) A[i+1, i+2] <- lambda(i+1)
   }
-  forward_P <- function(t) return(expAtv(A, initial_P, t=t)$eAtv) 
-  #use eAtv as more efficient.
+  forward_P <- function(t) return(expm(A*t) %*% initial_P)
   
   # Going backwards:
   chi <- function(I, L) choose(L, 2) / choose(I, 2)
@@ -146,16 +145,19 @@ get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
 #    if(k %% 100==1){
 #      print(curr)
 #    }
-    B[k,k] <- integrate(Vectorize(function(s) - up(t=final$time-s,I=curr$I) - down(t=final$time-s,I=curr$I)), lower = 0, upper = final$time - time)$value
     if (curr$L < curr$I){
       B[k, get_index(curr$I-1, curr$L)] <- 
         integrate(Vectorize(function(s) up(t=final$time-s,I=curr$I-1)), lower = 0, upper = final$time - time)$value
     }
     if (curr$I < N){
+      B[k,k] <- integrate(Vectorize(function(s) - up(t=final$time-s,I=curr$I) - down(t=final$time-s,I=curr$I)), lower = 0, upper = final$time - time)$value
       B[k, get_index(curr$I+1, curr$L)] <- 
         integrate(Vectorize(function(s) down(t=final$time-s, I=curr$I+1)*(1-chi(I=curr$I+1,L=curr$L))), lower=0, upper= final$time - time)$value
       B[k, get_index(curr$I+1, curr$L+1)] <- 
         integrate(Vectorize(function(s) down(t=final$time-s, I=curr$I+1)*chi(I=curr$I+1,L=curr$L+1)), lower=0, upper = final$time - time)$value
+    }
+    else {
+      B[k,k] <- integrate(Vectorize(function(s) - down(t=final$time-s,I=curr$I)), lower = 0, upper = final$time - time)$value
     }
   } 
   # print(B)
@@ -287,10 +289,6 @@ partial_info_bridge_experiment <- function(time, beta, gamma, initial, final, N)
   }
   return(final_out)
 }
-
-
-
-
 
 
 prob <- partial_info_bridge_experiment(time=3, beta=0.7, gamma=0.3, initial=list(time=0,I=1, L=1),final=list(time=5, I=6, L=5), N=10)
