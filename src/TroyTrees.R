@@ -113,8 +113,8 @@ get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
   A <- matrix(data=0, nrow=N+1, ncol=N+1)
   for(i in 0:N){ # rememeber, the index is infected + 1
     A[i+1,i+1] <- - lambda(i) - mu(i)
-    if (i > 0) A[i+1, i] <- mu(i-1)
-    if (i < N) A[i+1, i+2] <- lambda(i+1)
+    if (i > 0) A[i+1, i] <- lambda(i-1)
+    if (i < N) A[i+1, i+2] <- mu(i+1)
   }
   forward_P <- function(t) return(expm(A*t) %*% initial_P)
   
@@ -291,5 +291,42 @@ partial_info_bridge_experiment <- function(time, beta, gamma, initial, final, N)
 }
 
 
-prob <- partial_info_bridge_experiment(time=3, beta=0.7, gamma=0.3, initial=list(time=0,I=1, L=1),final=list(time=5, I=6, L=5), N=10)
-prob_2 <- get_partial_info_bridge_pmf(time=3, beta=0.7, gamma=0.3, initial=list(time=0,I=1, L=1),final=list(time=5, I=6, L=5), N=10)
+#prob <- partial_info_bridge_experiment(time=3, beta=0.7, gamma=0.3, initial=list(time=0,I=1, L=1),final=list(time=5, I=6, L=5), N=10)
+#prob_2 <- get_partial_info_bridge_pmf(time=3, beta=0.7, gamma=0.3, initial=list(time=0,I=1, L=1),final=list(time=5, I=6, L=5), N=10)
+
+# Backwards process vs Q from transpose
+compare_backwards_transpose <- function(time, beta, gamma, final, N){
+  lambda <- function(I) {
+    if (0 <= I & I < N) return(I*(N-I)*beta/N)
+    else return(0) }
+  mu <- function(I){ 
+    if (0 < I & I <= N) return(I*gamma)
+    else return(0) }
+  
+  A <- matrix(data=0, nrow=N+1, ncol=N+1)
+  B <- matrix(data=0, nrow=N+1, ncol=N+1)
+  # A is the matrix representing the transposed
+  # B is the matrix representing the backwards process.
+ 
+  for(i in 0:N){ 
+    A[i+1,i+1] <- - lambda(i) - mu(i)
+    if (i > 0) A[i, i+1] <- + lambda(i-1)
+    if (i < N) A[i+2, i+1] <- + mu(i+1)
+  }
+  
+  for(i in 0:N){ 
+    B[i+1,i+1] <- - lambda(i-1) - mu(i+1)
+    if (i > 0) B[i+1, i] <- mu(i)
+    if (i < N) B[i+1, i+2] <- lambda(i)
+  }
+  
+  final_P <- numeric(N+1)
+  final_P[final$I + 1] <- 1
+  
+  a_prob <- expm(A * (final$time - time)) %*% final_P
+  b_prob <- expm(B * (final$time - time)) %*% final_P
+  print(a_prob)
+  print(sum(a_prob))
+  print(b_prob)
+  print(sum(b_prob))}
+compare_backwards_transpose(5, 0.7, 0.3, final=list(I=5, time=10), N=10)
