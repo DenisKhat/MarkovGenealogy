@@ -304,14 +304,21 @@ compare_backwards_transpose <- function(time, beta, gamma, final, N){
     else return(0) }
   
   A <- matrix(data=0, nrow=N+1, ncol=N+1)
+  A_t <- matrix(data=0, nrow=N+1, ncol=N+1)
   B <- matrix(data=0, nrow=N+1, ncol=N+1)
   # A is the matrix representing the transposed
   # B is the matrix representing the backwards process.
  
   for(i in 0:N){ 
+    A_t[i+1,i+1] <- - lambda(i) - mu(i)
+    if (i > 0) A_t[i, i+1] <- lambda(i-1)
+    if (i < N) A_t[i+2, i+1] <- mu(i+1)
+  }
+  
+  for(i in 0:N){ 
     A[i+1,i+1] <- - lambda(i) - mu(i)
-    if (i > 0) A[i, i+1] <- + lambda(i-1)
-    if (i < N) A[i+2, i+1] <- + mu(i+1)
+    if (i > 0) A[i+1, i] <- lambda(i-1)
+    if (i < N) A[i+1, i+2] <- mu(i+1)
   }
   
   for(i in 0:N){ 
@@ -320,11 +327,17 @@ compare_backwards_transpose <- function(time, beta, gamma, final, N){
     if (i < N) B[i+1, i+2] <- lambda(i)
   }
   
+  initial_P <- numeric(N+1)
+  initial_P[2] <- 1
+  
   final_P <- numeric(N+1)
   final_P[final$I + 1] <- 1
   
-  a_prob <- expm(A * (final$time - time)) %*% final_P
+  a_prob <- expm(A_t * (final$time - time)) %*% final_P
+  a_og_prbo <- expm(A * time) %*% initial_P
   b_prob <- expm(B * (final$time - time)) %*% final_P
+  print(a_og_prbo)
+  print(sum(a_og_prbo))
   print(a_prob)
   print(sum(a_prob))
   print(b_prob)
