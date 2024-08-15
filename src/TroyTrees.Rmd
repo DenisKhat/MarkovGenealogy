@@ -49,7 +49,152 @@ ggplot(data = partial_bridge_I_exp, aes(x = I, y=P)) +
 ggplot(data = partial_bridge_L_exp, aes(x = L, y=P)) + 
   geom_col()
 ```
-Hi
+
+```{r}
+# Check if distributions over infections the same or diffirent in "lineages" and without. Justify it as a joint distribution, or not...
+source("TroyTrees.R")
+
+N = 10
+beta = 0.7
+gamma = 0.3
+TIME = 5
+# Using initial I = 1, final I = 6, final time = 10, sampled time = 5
+
+STATES_COUNT = (N+1) * (N+2) / 2
+indices <- get_indexing_table_full(N)
+# Helper functions for index table
+get_index <- function(i, l) subset(indices, I == i & L == l)$index
+get_state <- function(index){
+  wanted_row <- indices[index,]
+  return(list(I=wanted_row$I, L=wanted_row$L))
+}
+
+# Rates:
+lambda <- function(I) {
+  if (0 <= I & I < N) return(I*(N-I)*beta/N)
+  else return(0) }
+mu <- function(I){ 
+  if (0 < I & I <= N) return(I*gamma)
+  else return(0) }
+chi <- function(I, L) {
+  if(2 <= L & L <= I) return(choose(L, 2) / choose(I, 2))
+  else return(0) }
+
+
+# Forwards with lineages (guessed)
+A <- matrix(data=0, nrow=STATES_COUNT, ncol=STATES_COUNT)
+for(k in 1:STATES_COUNT){
+  curr <- get_state(k)
+  # Construct a matrix similar to that of above, using mu and lambda, 
+  # (instead of up/down), and transposing.
+  if (curr$I < N){
+    A[k,k] <- A[k,k] - lambda(curr$I) * (1 - chi(curr$I + 1,curr$L) + chi(curr$I+1, curr$L+1))
+    A[k,get_index(curr$I+1, curr$L)] <- mu(curr$I+1)}
+  if (curr$L < curr$I){
+    A[k,get_index(curr$I-1, curr$L)] <- lambda(curr$I-1) *(1-chi(I=curr$I, L=curr$L))
+    A[k,k] <- A[k,k] -mu(curr$I)
+  }
+  if (curr$L >= 1){
+    A[k,get_index(curr$I-1, curr$L-1)] <- lambda(curr$I-1) * chi(I=curr$I, L=curr$L)
+  }
+}
+
+# Forwards without lineages
+B <- matrix(data = 0, nrow = N+1, ncol = N+1)
+for(i in 0:N){ 
+  B[i+1,i+1] <- - lambda(i) - mu(i)
+  if (i > 0) B[i+1, i] <- lambda(i-1)
+  if (i < N) B[i+1, i+2] <- mu(i+1)
+}
+
+initial_A1 <- numeric(length=STATES_COUNT)
+initial_A2 <- numeric(length=STATES_COUNT)
+initial_B <- numeric(length=N+1)
+final_A <- numeric(length=STATES_COUNT)
+final_B <- numeric(length=N+1)
+
+initial_A1[get_index(1,0)] <- 1
+initial_A2[get_index(1,1)] <- 1
+initial_B[2] <- 1 
+final_A[get_index(6,5)] <- 1
+final_B[7] <- 1
+
+
+prob_A1 <- expm(A * TIME) %*% initial_A1
+prob_A2 <- expm(A * TIME) %*% initial_A2
+prob_At <- expm(t(A) * (10 - TIME)) %*% final_A
+prob_B <- expm(B * TIME) %*% initial_B
+prob_Bt <- expm(t(B) * (10-TIME)) %*% final_B
+
+Bt_start <- expm(t(B) * 10) %*% final_B
+B_end <- expm(B * 10) %*% initial_B
+
+normalization <- B_end[7] # = Bt_start[2]
+normalization_lineage <- 0
+for(i in 0:N){
+  corresponding_indices <- sapply(0:i,function(k) get_index(i,k))
+  normalization_lineage <- normalization_lineage + sum(prob_At[corresponding_indices]) * prob_B[i+1]
+}
+probabilities_w_lineage <-  get_partial_info_bridge_pmf(TIME, beta, gamma, list(I=1, time=0), list(I=6,L=5,time=10),N)
+A_joint <- numeric(STATES_COUNT)
+for(k in 1:STATES_COUNT){
+  curr <- get_state(k)
+  A_joint[k] <- prob_At[k] * prob_B[curr$I + 1] / normalization_lineage
+}
+
+probabilities_w_lineage <- cbind(probabilities_w_lineage, P_joint=numeric(N+1))
+for(i in 0:(N+1)){
+  for(l in 0:i){
+    curr <- get_index(i,l)
+    probabilities_w_lineage[probabilities_w_lineage$I == i & probabilities_w_lineage$L == l,"P_joint"] <- A_joint[curr]
+  }
+}
+
+PA1 <- numeric(N+1)
+PA2 <- numeric(N+1)
+PL1 <- numeric(N+1)
+PL2 <- numeric(N+1)
+PI1 <- numeric(N+1)
+PI2 <- numeric(N+1)
+for(i in 0:N){
+  corresponding_indices <- sapply(0:i,function(k) get_index(i,k))
+  PA1[i+1] <- sum(prob_A1[corresponding_indices])
+  PA2[i+1] <- sum(prob_A2[corresponding_indices])
+  PI1[i+1] <- sum(probabilities_w_lineage[probabilities_w_lineage$I == i,"P"])
+  PI2[i+1] <- sum(probabilities_w_lineage[probabilities_w_lineage$I == i,"P_joint"])
+  PL1[i+1] <- sum(probabilities_w_lineage[probabilities_w_lineage$L == i,"P"])
+  PL2[i+1] <- sum(probabilities_w_lineage[probabilities_w_lineage$L == i,"P_joint"])
+}
+
+probabilities <- data.frame(I=0:10, PA1, PA2, PB=prob_B, PB_t=prob_Bt, PL1, PL2)
+  PA1[i+1] <- sum(prob_A1[corresponding_indeces])
+
+bridge_1 <- get_bridge_pmf(c(5),0.7,0.3,initial=list(I=1,time=0), final=list(I=6, time=10),N = 10)
+bridge_2 <- prob_B * prob_Bt / normalization
+
+probabilities <- cbind(probabilities, bridge_1, bridge_2)
+
+probabilities
+ggplot(data = probabilities, aes(x = I, y=bridge_1)) + 
+  geom_col()
+
+ggplot(data = probabilities, aes(x = I, y=bridge_2)) + 
+  geom_col()
+
+
+ggplot(data = probabilities, aes(x = I, y=PI1)) + 
+  geom_col()
+
+ggplot(data = probabilities, aes(x = I, y=PI2)) + 
+  geom_col()
+
+ggplot(data = probabilities, aes(x = I, y=PL1)) + 
+  geom_col()
+
+ggplot(data = probabilities, aes(x = I, y=PL2)) + 
+  geom_col()
+
+```
 
 ```{r}
 source("MarkovChain.R")

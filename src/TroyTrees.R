@@ -19,53 +19,54 @@ get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
   
   initial_P <- sapply(0:N, function(x) 0 + (x == initial$I)) 
   
-  A <- Matrix(data = 0, nrow = N+1, ncol = N+1)
+  A <- matrix(data = 0, nrow = N+1, ncol = N+1)
   for (j in 1:(N+1)){
     # index is infected + 1
     A[j,j] <- -lambda(j-1) - mu(j-1)
-    if (j <= N) A[j,j+1] <- lambda(j-1)
-    if (j > 1) A[j,j-1] <- mu(j-1) }
+    if (j <= N) A[j+1,j] <- lambda(j-1)
+    if (j > 1) A[j-1,j] <- mu(j-1) }
   
   forward_P <- function(t){
     # returns a vector with the probability of each state as an entry, 
     # at some time t.
-    return(initial_P %*% expm(A * (t-initial$time), do.sparseMsg = F))
+    return(expm(A * (t-initial$time), do.sparseMsg = F) %*% initial_P)
   }
   
   ### Now do it backwards in time to form a stochastic bridge (consider final state)
   
-  up <- function(t, I) {
+  up <- function(s, I) {
     # index still is infected + 1
     if (0 <= I & I < N){
-      P <- forward_P(t)
+      P <- forward_P(final$time - s)
       return(mu(I+1) * P[I + 2] / P[I + 1])
     }
     else return(0)
   }
   
-  down <- function(t, I) {
+  down <- function(s, I) {
     # index still is infected + 1
     if (0 < I & I <= N){
-      P <- forward_P(t)
+      P <- forward_P(final$time - s)
       return(lambda(I-1) * P[I] / P[I+1])
     }
     else return(0)
   } 
 
-  final_P <- sapply(0:N, function(x) 0 + (x == final$I))
+  final_P <- numeric(N+1)
+  final_P[final$I + 1] <- 1
   
-  fundamental_matrix <- function(t) {
-    out <- Matrix(data = 0, nrow = N+1, ncol = N+1)
+  fundamental_matrix <- function(bck_t) {
+    out <- matrix(data = 0, nrow = N+1, ncol = N+1)
     for (j in 1:(N+1)){
-      # print(up(t, j-1))
       # print(down(t, j-1))
-      out[j,j] <- integrate(Vectorize(function(x)  up(x, j-1) + down(x, j-1)), lower = final$time, upper = final$time-t,subdivisions = 2000, rel.tol = 0.01)[[1]]
-      if (j > 1) out[j, j-1] <- integrate(Vectorize(function(x) - down(x, j-1)), lower = final$time, upper = final$time-t,subdivisions = 2000, rel.tol=0.01)[[1]]
-      if (j <= N) out[j, j+1] <- integrate(Vectorize(function(x) - up(x, j-1)), lower = final$time, upper = final$time-t,subdivisions = 2000, rel.tol=0.01)[[1]]
+      out[j,j] <- integrate(Vectorize(function(x) - up(x, j-1) - down(x, j-1)), lower = 0, upper = bck_t)[[1]]
+      if (j > 1) out[j, j-1] <- integrate(Vectorize(function(x) + up(x, j-2)), lower = 0, upper = bck_t)[[1]]
+      if (j <= N) out[j, j+1] <- integrate(Vectorize(function(x) + down(x, j)), lower = 0, upper = bck_t)[[1]]
     }
     return(out)
   }
-  return( sapply(times, function(s) final_P %*% expm(fundamental_matrix(final$time - s), do.sparseMsg = F)) )
+  #print(fundamental_matrix(final$time - 5))
+  return( sapply(times, function(x) expm(fundamental_matrix(final$time - x), do.sparseMsg = F) %*% final_P))
 }
 
 #prob = get_bridge_pmf(c(0.0001),0.7, 0.3, list(I=1, time=0), list(I=11, time=10), N=60)#[[1,2]]
@@ -342,4 +343,9 @@ compare_backwards_transpose <- function(time, beta, gamma, final, N){
   print(sum(a_prob))
   print(b_prob)
   print(sum(b_prob))}
-compare_backwards_transpose(5, 0.7, 0.3, final=list(I=5, time=10), N=10)
+
+#compare_backwards_transpose(5, 0.7, 0.3, final=list(I=5, time=10), N=10)
+
+fast_lineage_pmf <- function(time, beta, gamma, initial, final, N){
+    
+}

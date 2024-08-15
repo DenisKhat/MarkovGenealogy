@@ -2,7 +2,7 @@ library(deSolve)
 # library(ggplot2)
 # library(gridExtra)  # install.packages("gridExtra")
 library(Matrix)
-source("Volz.R")
+#source("Volz.R")
 
 
 markov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){
@@ -259,6 +259,48 @@ get_exact_likelihood_SIS <- function(data, end_time=10){
 # print(L(c(0.7,0.3)))
 # print(L(c(0.7,0.0)))
 
-get_volz_likelihood_SIS <- function(data, N=60, initial_I=1){
-  return(0)
-}
+get_volz_likelihood_SIS <- function(data, N=60, initial_I=1, end_time=10){
+  # Data is a df of of the form (time)
+  SIS_model <- function(time, state, parms) { # Using backwards in time A for system
+    with(as.list(c(state, parms)), {
+      dS <- (-beta * S * I + gamma * I)
+      dI <- (beta * S * I - gamma * I)
+      return(list(c(dS, dI)))
+    })
+  }
+  initial_state_sis <- c(S = (N-initial_I)/60, I = initial_I/60)
+  times <- seq(0, end_time, by = 0.01)
+  likelihood <- function(beta, gamma){
+    parameters <- c(beta = beta, gamma = gamma)
+    SISoutput <- as.data.frame(ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
+    # print(SISoutput$I)
+    f_SI_points <- sapply(seq(1, end_time/0.01 + 1, by=1), function(i) beta * SISoutput$S[i] * SISoutput$I[i] )
+    I_func <- approxfun(x=times, y=as.vector(SISoutput$I))
+    f_SI <- approxfun(x=times, y=f_SI_points)
+    # print("passed f_SI")
+    A_initial <- c(A=I_func(end_time))
+    A_model <- function(time, state, parms){ # parms should be nothing...
+      with(as.list(c(state, parms)), {
+        dA <- - I_func(end_time - time) * ((A/I(end_time-time))^2)
+        return(list(c(dA)))
+      })
+    }
+    A_ode <- as.data.frame(ode(y=A_initial,times=seq(0, end_time, by=0.01), func=A_model, parms = c(), method="ode45"))
+    A_ode$A <- rev(A_ode$A)
+    A_func <- approxfun(x = seq(0,10,by=0.01),y=as.numeric(A_ode$A))
+    # print("hi?")
+    dA <- function(x) log(f_SI(x)*(A_func(x)/I_func(x))^2)
+    # print(f_SI(0.5))
+    # print(A_func(0.5))
+    # print(I_func(0.5))
+    # print(dA(0.5))
+    n <- length(data$time)
+    likelihood_times <- sapply(data$time, dA)
+    # print(sum(likelihood_times) - (n-1)*log(A_func(10)))
+    # print(sum(likelihood_times) - (n-1)*log(A_func(10)-A_func(0.01)))
+    return(sum(likelihood_times) - (n-1)*log(A_func(10)-A_func(0.01)))
+  }
+  return(likelihood)
+} 
+like <- get_volz_likelihood_SIS(data.frame(times=c(1,3,6,8)))
+like(0.7, 0.3)
