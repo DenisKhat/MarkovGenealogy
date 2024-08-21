@@ -53,11 +53,12 @@ ggplot(data = partial_bridge_L_exp, aes(x = L, y=P)) +
 ```{r}
 # Check if distributions over infections the same or diffirent in "lineages" and without. Justify it as a joint distribution, or not...
 source("TroyTrees.R")
+library(expm)
 
 N = 10
 beta = 0.7
 gamma = 0.3
-TIME = 5
+TIME = 3
 # Using initial I = 1, final I = 6, final time = 10, sampled time = 5
 
 STATES_COUNT = (N+1) * (N+2) / 2
@@ -87,12 +88,11 @@ for(k in 1:STATES_COUNT){
   curr <- get_state(k)
   # Construct a matrix similar to that of above, using mu and lambda, 
   # (instead of up/down), and transposing.
+  A[k,k] <- - lambda(curr$I) - mu(curr$I)
   if (curr$I < N){
-    A[k,k] <- A[k,k] - lambda(curr$I) * (1 - chi(curr$I + 1,curr$L) + chi(curr$I+1, curr$L+1))
     A[k,get_index(curr$I+1, curr$L)] <- mu(curr$I+1)}
   if (curr$L < curr$I){
     A[k,get_index(curr$I-1, curr$L)] <- lambda(curr$I-1) *(1-chi(I=curr$I, L=curr$L))
-    A[k,k] <- A[k,k] -mu(curr$I)
   }
   if (curr$L >= 1){
     A[k,get_index(curr$I-1, curr$L-1)] <- lambda(curr$I-1) * chi(I=curr$I, L=curr$L)
@@ -167,9 +167,9 @@ for(i in 0:N){
 }
 
 probabilities <- data.frame(I=0:10, PA1, PA2, PB=prob_B, PB_t=prob_Bt, PL1, PL2)
-  PA1[i+1] <- sum(prob_A1[corresponding_indeces])
+  PA1[i+1] <- sum(prob_A1[corresponding_indices])
 
-bridge_1 <- get_bridge_pmf(c(5),0.7,0.3,initial=list(I=1,time=0), final=list(I=6, time=10),N = 10)
+bridge_1 <- get_bridge_pmf(c(TIME),0.7,0.3,initial=list(I=1,time=0), final=list(I=6, time=10),N = 10)
 bridge_2 <- prob_B * prob_Bt / normalization
 
 probabilities <- cbind(probabilities, bridge_1, bridge_2)

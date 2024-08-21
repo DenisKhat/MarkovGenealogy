@@ -2,6 +2,8 @@ library(deSolve)
 library(Matrix)
 library(mosaicCalc)
 library(expm)
+library(calculus)
+library(cubature)
 
 get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
   # The function does not consider lineages.
@@ -51,6 +53,12 @@ get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
     }
     else return(0)
   } 
+  
+  
+  print(down(9, 2))
+  print(down(9.99, 2))
+  print(down(9.9999, 2))
+  print(down(1,2))
 
   final_P <- numeric(N+1)
   final_P[final$I + 1] <- 1
@@ -65,8 +73,8 @@ get_bridge_pmf <- function(times,beta, gamma, initial, final, N){
     }
     return(out)
   }
-  #print(fundamental_matrix(final$time - 5))
-  return( sapply(times, function(x) expm(fundamental_matrix(final$time - x), do.sparseMsg = F) %*% final_P))
+  print(fundamental_matrix(final$time - times[1]))
+  return( sapply(times, function(x) expm(fundamental_matrix(final$time - x), do.sparseMsg = F,method="AlMohy-Hi09", order=12) %*% final_P))
 }
 
 #prob = get_bridge_pmf(c(0.0001),0.7, 0.3, list(I=1, time=0), list(I=11, time=10), N=60)#[[1,2]]
@@ -112,7 +120,7 @@ get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
   
   initial_P <- sapply(0:N, function(x) 0 + (x == initial$I)) 
   A <- matrix(data=0, nrow=N+1, ncol=N+1)
-  for(i in 0:N){ # rememeber, the index is infected + 1
+  for(i in 0:N){ # remember, the index is infected + 1
     A[i+1,i+1] <- - lambda(i) - mu(i)
     if (i > 0) A[i+1, i] <- lambda(i-1)
     if (i < N) A[i+1, i+2] <- mu(i+1)
@@ -151,18 +159,18 @@ get_partial_info_bridge_pmf <- function(time, beta, gamma, initial, final, N){
         integrate(Vectorize(function(s) up(t=final$time-s,I=curr$I-1)), lower = 0, upper = final$time - time)$value
     }
     if (curr$I < N){
-      B[k,k] <- integrate(Vectorize(function(s) - up(t=final$time-s,I=curr$I) - down(t=final$time-s,I=curr$I)), lower = 0, upper = final$time - time)$value
+      B[k,k] <- integral(Vectorize(function(s) - up(t=final$time-s,I=curr$I) - down(t=final$time-s,I=curr$I)), bounds = list(c(0,final$time - time)), relTol=.Machine$double.eps)$value
       B[k, get_index(curr$I+1, curr$L)] <- 
-        integrate(Vectorize(function(s) down(t=final$time-s, I=curr$I+1)*(1-chi(I=curr$I+1,L=curr$L))), lower=0, upper= final$time - time)$value
+        integral(Vectorize(function(s) down(t=final$time-s, I=curr$I+1)*(1-chi(I=curr$I+1,L=curr$L))), bounds = list(c(0,final$time - time)), relTol=.Machine$double.eps)$value
       B[k, get_index(curr$I+1, curr$L+1)] <- 
-        integrate(Vectorize(function(s) down(t=final$time-s, I=curr$I+1)*chi(I=curr$I+1,L=curr$L+1)), lower=0, upper = final$time - time)$value
+        integral(Vectorize(function(s) down(t=final$time-s, I=curr$I+1)*chi(I=curr$I+1,L=curr$L+1)), bounds = list(c(0,final$time - time)), relTol=.Machine$double.eps)$value
     }
     else {
-      B[k,k] <- integrate(Vectorize(function(s) - down(t=final$time-s,I=curr$I)), lower = 0, upper = final$time - time)$value
+      B[k,k] <- integral(Vectorize(function(s) - down(t=final$time-s,I=curr$I)), bounds = list(c(0,final$time - time)), relTol=.Machine$double.eps)$value
     }
   } 
   # print(B)
-  output_vector <- expm(B) %*% final_P
+  output_vector <- expm(B, method = "Ward77") %*% final_P
   output_df <- data.frame(row.names = c("I", "L", "P"))
   for (k in 1:STATES_COUNT){
     curr <- get_state(k)

@@ -2,7 +2,6 @@ library(deSolve)
 # library(ggplot2)
 # library(gridExtra)  # install.packages("gridExtra")
 library(Matrix)
-#source("Volz.R")
 
 
 markov_virus <- function(end_time, beta, gamma, S, I, R = 0, curr_time=0, S_list=NULL, I_list=NULL, R_list=NULL, SIS=FALSE){
@@ -176,8 +175,6 @@ expected_I <- function(beta, gamma, time, initial_S = 59, initial_I = 1){
   return(sum(sapply(1:N, function(i) i * probabilities[i+1] )))
 }
 
-expected_I(0.7, 0.3, 10)
-
 
 get_indices_for_I <- function(I, N){
   return(sapply(seq(0,N), function(s) s*(N+1) + I + 1))
@@ -201,7 +198,7 @@ get_event_likelihood_SI <- function(data, N=60, initial_I=1, end_time=10){
 }
 
 
-get_sample_times_likelihood_SIS <- function(data){
+get_sampled_state_likelihood_SIS <- function(data){
   # Data is a df of of the form (time,I), remember to fix times when using this.
   # representing the observed data. Returns a log likelihood function which can
   # then be optimized. log likelihood function input of form (beta, gamma).
@@ -217,7 +214,7 @@ get_sample_times_likelihood_SIS <- function(data){
 }
 
 
-get_exact_likelihood_SIS <- function(data, end_time=10){
+get_event_time_likelihood_SIS <- function(data, end_time=10){
   # data is a dataframe from markov_virus.
   # make sure data includes the initial state, i.e. time = 0
   # time is a real number, type is +1 if infection, -1 if recovery.
@@ -253,14 +250,9 @@ get_exact_likelihood_SIS <- function(data, end_time=10){
   return(L)
 }
 
-# sample_dta <- markov_virus(end_time = 10,beta = 0.7,gamma=0.3,S = 59,I=1,R=0,SIS = T)
-# sample_dta$I
-# L <- get_exact_likelihood_SIS(sample_dta)
-# print(L(c(0.7,0.3)))
-# print(L(c(0.7,0.0)))
 
 get_volz_likelihood_SIS <- function(data, N=60, initial_I=1, end_time=10){
-  # Data is a df of of the form (time)
+  # Data is a df of of the form (time,...)
   SIS_model <- function(time, state, parms) { # Using backwards in time A for system
     with(as.list(c(state, parms)), {
       dS <- (-beta * S * I + gamma * I)
@@ -272,9 +264,9 @@ get_volz_likelihood_SIS <- function(data, N=60, initial_I=1, end_time=10){
   times <- seq(0, end_time, by = 0.01)
   likelihood <- function(beta, gamma){
     parameters <- c(beta = beta, gamma = gamma)
-    SISoutput <- as.data.frame(ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
+    SISoutput <- as.data.frame(deSolve::ode(y = initial_state_sis, times = times, func = SIS_model, parms = parameters))
     # print(SISoutput$I)
-    f_SI_points <- sapply(seq(1, end_time/0.01 + 1, by=1), function(i) beta * SISoutput$S[i] * SISoutput$I[i] )
+    f_SI_points <- sapply(1:length(times), function(i) beta * SISoutput$S[i] * SISoutput$I[i] )
     I_func <- approxfun(x=times, y=as.vector(SISoutput$I))
     f_SI <- approxfun(x=times, y=f_SI_points)
     # print("passed f_SI")
@@ -285,22 +277,21 @@ get_volz_likelihood_SIS <- function(data, N=60, initial_I=1, end_time=10){
         return(list(c(dA)))
       })
     }
-    A_ode <- as.data.frame(ode(y=A_initial,times=seq(0, end_time, by=0.01), func=A_model, parms = c(), method="ode45"))
+    A_ode <- as.data.frame(deSolve::ode(y=A_initial,times=seq(0, end_time, by=0.01), func=A_model, parms = c(), method="ode45"))
+    print(rev(A_ode$A))
     A_ode$A <- rev(A_ode$A)
-    A_func <- approxfun(x = seq(0,10,by=0.01),y=as.numeric(A_ode$A))
-    # print("hi?")
+    A_func <- approxfun(x = seq(0.01,end_time,by=0.01),y=as.numeric(A_ode$A[2:nrow(A_ode)]))
     dA <- function(x) log(f_SI(x)*(A_func(x)/I_func(x))^2)
-    # print(f_SI(0.5))
-    # print(A_func(0.5))
-    # print(I_func(0.5))
-    # print(dA(0.5))
+    print(f_SI(0.5))
+    print(A_func(0.5))
+    print(I_func(0.5))
+    print(dA(0.5))
     n <- length(data$time)
     likelihood_times <- sapply(data$time, dA)
     # print(sum(likelihood_times) - (n-1)*log(A_func(10)))
     # print(sum(likelihood_times) - (n-1)*log(A_func(10)-A_func(0.01)))
-    return(sum(likelihood_times) - (n-1)*log(A_func(10)-A_func(0.01)))
+    return(sum(likelihood_times) + (n-1)*log(A_func(end_time)-A_func(0.01)))
   }
   return(likelihood)
 } 
-like <- get_volz_likelihood_SIS(data.frame(times=c(1,3,6,8)))
-like(0.7, 0.3)
+

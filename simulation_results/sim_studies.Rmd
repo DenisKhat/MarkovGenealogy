@@ -4,15 +4,20 @@ output: html_notebook
 editor_options: 
   chunk_output_type: console
 ---
+
 ```{r}
 source("src/MarkovChain.R")
 source("src/Volz.R")
 library(OmicsPLS)
 library(ggplot2)
 ```
+
 ## No Gamma
+
 using beta = 0.5
-### Sim Studies
+
+#### Sim Studies
+
 ```{r}
 exact_no_gamma <- read.csv("simulation_results/exact_no_gamma.csv")[1:5000,]
 sample_no_gamma <- read.csv("simulation_results/sample_times_no_gamma.csv")
@@ -75,7 +80,9 @@ volz_mean
 mean(volz_no_gamma$inCI, na.rm = T)
 mean(volz_no_gamma$width, na.rm = T)
 ```
+
 ### Sample Graphs
+
 ```{r}
 SAMPLE_ID <- 314
 #275 good, 274 bad, 314 fine
@@ -154,10 +161,11 @@ ggplot() +
   )
   
 ```
+
 ## With Gamma
-using beta = 0.7,
-gamma = 0.3
-### Sim Studies
+
+using beta = 0.7, gamma = 0.3 \### Sim Studies
+
 ```{r}
 ## Monte Carlo Volz
 monte_carlo_volz_file <- read.csv("simulation_results/monte_carlo_volz.csv")
@@ -266,7 +274,9 @@ ggplot(data=event_times) +
   geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
 
 ```
+
 ### Sample SIM STUDY!
+
 ```{r}
 df <- data.frame()
 for (i in 1:5000){
@@ -283,7 +293,9 @@ for (i in 1:5000){
 
 write.csv(df, file="simulation_results/sample_times.csv", row.names = F, col.names = F)
 ```
+
 ### Sample Graphs
+
 ```{r}
 ### Volz Ones In VolzInvestigation.Rmd
 data <- subset(readRDS("src/SIS_virus_infections.RDS"), sim_num==200)
@@ -365,7 +377,9 @@ ggplot(heatmap_vals, aes(beta, gamma)) +
 
 
 ```
+
 ### Check the Expected Times for I in SIS Model
+
 ```{r}
 val_range <- seq(0.00,5,by=0.05)
 expected_true <- expected_I(0.7, 0.3, 10)
@@ -386,4 +400,43 @@ ggplot(heatmap_vals, aes(beta, gamma), ) +
   scale_fill_gradientn(colors=c("black", "midnightblue","white"),
                       breaks=c(expected_true,cutoff,minim),
                       labels=c("max", "median","min"))
+```
+
+### Volz SIS Two Parameters
+```{r}
+volz_sis_file <- read.csv("simulation_results/volz.csv")
+## Volz, correcting bc of computer rounding (can't take Ancestor function exactly at 0.)
+volz_sis_file[volz_sis_file == 0.01] <- 0
+### Stats
+sqrt(mse(volz_sis_file$beta, 0.7, na.rm = T))
+sqrt(mse(volz_sis_file$gamma, 0.3, na.rm = T))
+volz_mean_beta <- mean(volz_sis_file$beta, na.rm=T)
+volz_mean_beta
+volz_mean_gamma <- mean(volz_sis_file$gamma, na.rm=T)
+volz_mean_gamma
+### Plots
+ggplot(data=volz_sis_file) +
+  geom_histogram(aes(x=beta), binwidth = 0.05) +
+  xlim(0.0,1.0) +
+  labs(
+    title = "Volz Beta Estimate Distribution (2.3)",
+    y="Counts",
+    x="Beta Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=volz_mean_beta, xend=volz_mean_beta, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.7, xend=0.7, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
+ggplot(data=volz_sis_file) +
+  geom_histogram(aes(x=gamma), binwidth = 0.05) +
+  xlim(-0.1,1.0) +
+  labs(
+    title = "Volz Gamma Estimate Distribution (2.3)",
+    y="Counts",
+    x="Gamma Estimate (Bins of width 0.05)",
+    color="Statistic"
+  ) +
+  geom_segment(x=volz_mean_gamma, xend=volz_mean_gamma, y=0, yend=Inf, aes(colour = "Estimate Average"), linewidth=1) +
+  geom_segment(x=0.3, xend=0.3, y=0, yend=Inf, aes(colour = "True Value"), linewidth=1)
+
 ```
